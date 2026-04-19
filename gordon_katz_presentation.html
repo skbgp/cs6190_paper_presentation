@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partial Fairness in Secure Two-Party Computation</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:#fff;color:#111;overflow:hidden;height:100vh;width:100vw}
+.slide{display:none;flex-direction:column;justify-content:flex-start;align-items:center;height:100vh;width:100vw;padding:32px 56px 24px;position:relative;overflow-y:auto}
+.slide.active{display:flex}
+
+.progress{position:fixed;top:0;left:0;height:3px;background:#111;z-index:100;transition:width .3s ease}
+.slide-number{position:fixed;bottom:12px;right:18px;font-size:12px;color:#aaa;font-family:'Inter',monospace;z-index:100}
+
+h1{font-size:2.6em;font-weight:700;color:#000;margin-bottom:8px;text-align:center;line-height:1.15;letter-spacing:-0.02em}
+h2{font-size:1.55em;font-weight:700;color:#000;margin-bottom:12px;text-align:left;width:100%;border-bottom:2.5px solid #000;padding-bottom:5px;letter-spacing:-0.01em}
+h3{font-size:1.05em;font-weight:600;color:#000;margin:8px 0 3px}
+p{font-size:.92em;line-height:1.65;color:#111;max-width:100%;text-align:left}
+.subtitle{font-size:1em;color:#555;text-align:center;margin-top:3px;font-weight:400}
+.content{width:100%;max-width:1500px;text-align:left}
+
+ul{list-style:disc;padding-left:20px;margin:4px 0}
+ul li{padding:2px 0;font-size:.9em;line-height:1.55}
+ol{padding-left:20px;margin:4px 0}
+ol li{padding:2px 0;font-size:.9em;line-height:1.55}
+
+.def{background:#f6f6f6;border-left:3px solid #000;padding:10px 14px;margin:8px 0;font-size:.9em;line-height:1.55}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:100%;margin-top:8px}
+.col{border:1px solid #ccc;padding:12px 16px}
+.col h3{margin-top:0}
+
+table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.88em}
+th{background:#eee;color:#000;padding:7px 10px;text-align:left;font-weight:600;border-bottom:2px solid #000}
+td{padding:6px 10px;border-bottom:1px solid #ddd}
+
+.math-box{background:#f8f8f8;border:1px solid #ddd;padding:12px 18px;margin:8px 0;text-align:center;font-size:1em}
+
+/* Notes panel */
+.notes-panel{position:fixed;bottom:0;left:0;right:0;background:#fafafa;border-top:2px solid #222;padding:14px 32px;font-size:.82em;color:#222;max-height:260px;overflow-y:auto;transform:translateY(100%);transition:transform .2s ease;z-index:200;line-height:1.6}
+.notes-panel.visible{transform:translateY(0)}
+.notes-panel h4{color:#000;font-size:.9em;margin:0 0 8px;font-weight:700;background:#eee;padding:5px 10px;border-radius:3px}
+.notes-panel .say{padding:6px 10px;margin:5px 0;border-left:3px solid #222;background:#f0f0f0;font-size:.95em;line-height:1.6}
+.notes-panel .do{padding:4px 10px;margin:5px 0;color:#888;font-style:italic;font-size:.85em;border-left:3px solid #ccc}
+.notes-hint{position:fixed;bottom:4px;left:6px;font-size:.5em;color:#bbb;z-index:100;font-family:monospace}
+
+/* Nav */
+.nav{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:100}
+.nav button{background:#f0f0f0;border:1px solid #ccc;color:#555;width:28px;height:28px;border-radius:3px;cursor:pointer;font-size:.8em;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.nav button:hover{color:#000;border-color:#999}
+
+.slide-notes{display:none!important}
+.katex{color:#000!important}
+.small{font-size:.85em;color:#555}
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+<div class="slide-number" id="slideNum"></div>
+<div class="notes-hint">N = notes | P = presenter window | F = fullscreen</div>
+<div class="notes-panel" id="notesPanel"><div id="notesContent"></div></div>
+<div class="nav">
+  <button onclick="prevSlide()">&#9664;</button>
+  <button onclick="nextSlide()">&#9654;</button>
+</div>
+
+
+<!-- ==================== SLIDE 1: TITLE ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>OPENING — ~1 min</h4>
+    <p class="say">Good morning everyone. Today I will be presenting the paper Partial Fairness in Secure Two-Party Computation by S. Dov Gordon and Jonathan Katz, published at Eurocrypt 2010.</p>
+    <p class="say">Cleve showed in 1986 that complete fairness is impossible for general two-party computation. Since then, the standard approach has been security-with-abort, which provides privacy and correctness but zero fairness guarantee.</p>
+    <p class="say">Gordon and Katz asked a simple but powerful question: can we get something in between? Their answer is yes, for a well-defined class of functions, and they prove their results are tight.</p>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center">
+    <h1>Partial Fairness in Secure<br>Two-Party Computation</h1>
+    <p class="subtitle" style="margin-top:12px;font-size:1.05em">S. Dov Gordon &amp; Jonathan Katz</p>
+    <p class="subtitle" style="font-size:.88em;margin-top:5px">Eurocrypt 2010 &nbsp;|&nbsp; LNCS 6110, pp. 157-176</p>
+    <div style="margin-top:50px;text-align:center">
+      <p class="subtitle" style="font-size:.85em;color:#888">Presented by: Shubham Kumar (CS25M046)</p>
+      <p class="subtitle" style="font-size:.78em;color:#aaa">CS6190: Recent Developments in Theoretical Computer Science</p>
+      <p class="subtitle" style="font-size:.78em;color:#aaa">IIT Madras</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 2: OUTLINE ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>ROADMAP — ~30 sec</h4>
+    <p class="say">Let me walk you through the structure of this talk.</p>
+    <p class="do">Quickly read through the numbered list on screen. Don't elaborate on each point.</p>
+    <p class="say">The first half covers the paper's content in detail. Toward the end, I will present three pieces of my own additional work.</p>
+    <p class="say">Let us begin with some background.</p>
+  </div>
+  <div class="content">
+    <h2>Outline</h2>
+    <ol style="font-size:1.05em;line-height:2.1">
+      <li><strong>Background:</strong> Secure 2PC, fairness, Cleve's impossibility, security-with-abort</li>
+      <li><strong>$\frac{1}{p}$-Security:</strong> The definition (Def 3) and comparison to prior notions</li>
+      <li><strong>Protocol:</strong> ShareGen, cover distributions, gradual release (Phase 1 + Phase 2)</li>
+      <li><strong>Lemma 2:</strong> Bounding the abort probability (proof by induction)</li>
+      <li><strong>Simulator:</strong> Construction for malicious $P_1$ (Claim 5) and malicious $P_2$ (Claim 8)</li>
+      <li><strong>Feasibility:</strong> Theorem 3 (poly-size range) and Theorem 6 (poly-size domain)</li>
+      <li><strong>Impossibility:</strong> Theorem 9 (EQ function) and Theorem 11 (Swap function)</li>
+      <li><strong>Additional work:</strong> Worked example, tightness of Lemma 2, multi-party analysis</li>
+      <li><strong>Open questions and conclusion</strong></li>
+    </ol>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 3: 2PC SETTING ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>BACKGROUND — ~1.5 min</h4>
+    <p class="say">This is the standard two-party computation setting since Yao's work in 1986. Two parties, $P_1$ and $P_2$, hold private inputs $x$ and $y$. They want to jointly compute a function $f(x,y)$ without revealing their inputs to each other.</p>
+    <p class="say">Security is formalized using the real-ideal paradigm. In the real world, the parties run a protocol and the adversary controls one party. In the ideal world, a trusted third party does the computation honestly.</p>
+    <p class="say">A protocol is secure if for every real-world adversary, there exists an ideal-world simulator whose output is computationally indistinguishable.</p>
+    <p class="do">Point to the table.</p>
+    <p class="say">We want four properties. The first three — privacy, correctness, and input independence — have been achievable since Yao. Fairness is the hard one. Let me explain why.</p>
+  </div>
+  <div class="content">
+    <h2>Secure Two-Party Computation</h2>
+    <p>Two parties $P_1$ (input $x \in X_n$) and $P_2$ (input $y \in Y_n$) jointly compute a functionality $f_n : X_n \times Y_n \to Z^1_n \times Z^2_n$. Security is defined via the <strong>real/ideal paradigm</strong>.</p>
+    <div class="grid" style="margin-top:8px">
+      <div class="col">
+        <h3>Real world</h3>
+        <p>No trusted party. Parties execute protocol $\Pi$. Adversary $\mathcal{A}$ controls one party, sends arbitrary messages, can abort at any time.</p>
+        <p style="margin-top:4px;font-size:.88em"><strong>Output:</strong> $\mathsf{REAL}_{\Pi,\mathcal{A}(z)}(x,y,n)$ = joint output of $\mathcal{A}$ and the honest party.</p>
+      </div>
+      <div class="col">
+        <h3>Ideal world</h3>
+        <p>A trusted party receives inputs, computes $f(x,y)$, delivers outputs. Adversary $\mathcal{S}$ (simulator) can only interact with the trusted party.</p>
+        <p style="margin-top:4px;font-size:.88em"><strong>Output:</strong> $\mathsf{IDEAL}_{f,\mathcal{S}(z)}(x,y,n)$ = joint output of $\mathcal{S}$ and the honest party.</p>
+      </div>
+    </div>
+    <h3 style="margin-top:10px">Security properties</h3>
+    <table>
+      <tr><th>Property</th><th>Meaning</th><th>Status</th></tr>
+      <tr><td><strong>Privacy</strong></td><td>Adversary's view is simulatable from output alone</td><td>Achievable [Yao 86]</td></tr>
+      <tr><td><strong>Correctness</strong></td><td>Honest party always gets $f^i(x,y)$</td><td>Achievable</td></tr>
+      <tr><td><strong>Input independence</strong></td><td>Adversary commits input before seeing honest party's input</td><td>Achievable</td></tr>
+      <tr><td><strong>Fairness</strong></td><td>Both get output, or neither does</td><td><strong>Impossible</strong> [Cleve 86]</td></tr>
+    </table>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 4: CLEVE ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>CLEVE'S IMPOSSIBILITY — ~1.5 min</h4>
+    <p class="say">This is Cleve's result from 1986, which is the starting point for this entire paper.</p>
+    <p class="say">Consider any $r$-round protocol. Define $a_i$ as $P_1$'s output if $P_2$ aborts after round $i$. At round zero, nobody knows the output. At round $r$, both parties know it. So somewhere in between, there must be a threshold round where one party first learns the answer before the other.</p>
+    <p class="say">The adversary can be the party that crosses this threshold first. It detects the transition, aborts immediately, and walks away with the correct answer while the other party does not have it. Cleve showed the advantage is $\Omega(1/r)$.</p>
+    <p class="say">After this result, the entire field adopted security-with-abort: the adversary receives its output and can then block the honest party. This gives zero fairness. Goldreich flagged in his textbook that defining partial fairness properly was an open problem.</p>
+    <p class="say">Gordon and Katz's key insight is how to define partial fairness in the right way.</p>
+  </div>
+  <div class="content">
+    <h2>Cleve's Impossibility (1986)</h2>
+    <div class="def">
+      <strong>Theorem [Cleve 86]:</strong> For any $r$-round two-party coin-flipping protocol, a malicious adversary can bias the outcome by $\Omega(1/r)$. Complete fairness is impossible for general 2PC without honest majority.
+    </div>
+    <h3>The argument (intuition)</h3>
+    <ul>
+      <li>Let $a_i$ = $P_1$'s output if $P_2$ aborts after round $i$; &nbsp; $b_i$ = $P_2$'s output if $P_1$ aborts after round $i$</li>
+      <li>At round 0: nobody knows $f(x,y)$. &nbsp; At round $r$: both know $f(x,y)$</li>
+      <li>There exists a <strong>threshold round</strong> where one party's output transitions from "unknown" to "known" before the other's</li>
+      <li>That party can abort at the threshold and walk away with the answer</li>
+      <li>Advantage: $\Omega(1/r)$ (tight: Moran-Naor-Segev 2009 showed $O(1/r)$ is achievable for coin tossing)</li>
+    </ul>
+    <h3 style="margin-top:10px">Consequence: Security-with-abort (Def 13)</h3>
+    <div class="grid">
+      <div class="col">
+        <h3>How it works</h3>
+        <ul>
+          <li>Trusted party computes $f(x,y) = (z_1, z_2)$</li>
+          <li>Sends $z_1$ to $P_1$ first</li>
+          <li>$P_1$ then sends <strong>continue</strong> or <strong>abort</strong></li>
+          <li>If abort: trusted party sends $\bot$ to $P_2$</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Properties</h3>
+        <ul>
+          <li>Privacy: preserved (negligible gap)</li>
+          <li>Correctness: preserved</li>
+          <li>Input independence: preserved</li>
+          <li>Fairness: <strong>none</strong></li>
+        </ul>
+        <p class="small" style="margin-top:6px">Goldreich (Section 7.7.1.1): defining partial fairness was an <strong>open problem</strong>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 5: DEFINITION ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>THE DEFINITION — ~2 min</h4>
+    <p class="do">This is the most important conceptual slide. Slow down here.</p>
+    <p class="say">The paper's main conceptual contribution is Definition 3. Let me unpack it carefully.</p>
+    <p class="say">The ideal world in this definition is the same fair ideal world used for complete security — both parties always get the correct output. The only relaxation is the distinguishing gap: we allow $1/p(n)$ instead of requiring it to be negligible.</p>
+    <p class="do">Point to the comparison table.</p>
+    <p class="say">Look at these three notions side by side. Full security uses the fair ideal world with a negligible gap — but it is impossible by Cleve. Security-with-abort weakens the ideal world to allow blocking, with a negligible gap — achievable, but no fairness. Gordon and Katz's $1/p$-security keeps the fair ideal world but allows a $1/p$ gap. This is the sweet spot.</p>
+    <p class="say">An important subtlety: Katz earlier proposed $1/p$-security-with-abort in his STOC 2007 paper, which compares to the abort ideal. That gives no fairness at all despite the name. The paper makes this point in footnote 1.</p>
+    <p class="say">Now, to build a protocol achieving this definition, we need a tool called a cover distribution.</p>
+  </div>
+  <div class="content">
+    <h2>The Definition: $\frac{1}{p}$-Security (Def 3)</h2>
+    <div class="def">
+      <strong>Definition 3:</strong> Protocol $\Pi$ <em>$\frac{1}{p}$-securely computes</em> $f$ if for every PPT adversary $\mathcal{A}$, there exists a PPT simulator $\mathcal{S}$ in the <strong>complete fairness</strong> ideal world such that for all PPT distinguishers $D$:
+    </div>
+    <div class="math-box">
+      $$\left|\Pr[D(\mathsf{REAL}_{\Pi,\mathcal{A}(z)}(x,y,n)) = 1] - \Pr[D(\mathsf{IDEAL}_{f,\mathcal{S}(z)}(x,y,n)) = 1]\right| \leq \frac{1}{p(n)} + \mathrm{negl}(n)$$
+    </div>
+    <h3>Three notions compared</h3>
+    <table>
+      <tr><th>Notion</th><th>Ideal world</th><th>Gap</th><th>Fairness?</th></tr>
+      <tr><td>Def 12 (full security)</td><td>Fair (both get output)</td><td>negligible</td><td>Complete, but <strong>impossible</strong></td></tr>
+      <tr><td>Def 13 (security-with-abort)</td><td>Abort ($P_1$ can block $P_2$)</td><td>negligible</td><td><strong>None</strong></td></tr>
+      <tr><td><strong>Def 3 ($1/p$-security)</strong></td><td><strong>Fair</strong> (both get output)</td><td>$1/p(n)$</td><td><strong>Partial</strong></td></tr>
+    </table>
+    <div class="def" style="margin-top:8px;font-size:.88em">
+      <strong>Key insight:</strong> The ideal world is the <em>same</em> as for full security. The only relaxation is the gap. Since we compare to the fair ideal, the protocol is "almost as good" as a trusted party.<br>
+      <strong>Contrast with Katz [STOC 07]:</strong> "$\frac{1}{p}$-security-with-abort" compares to the <em>abort</em> ideal. That gives <strong>no</strong> fairness despite the name (footnote 1 in the paper).
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 6: COVER DISTRIBUTION ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>COVER DISTRIBUTIONS — ~1 min</h4>
+    <p class="say">A cover distribution $D_1$ covers $D_2$ with parameter $\alpha$ if every value that is possible under $D_2$ is also reasonably likely under $D_1$. Formally, $D_1(z) \geq \alpha \cdot D_2(z)$ for every $z$.</p>
+    <p class="say">The intuition is simple: if the adversary ever sees a value that is impossible under the cover distribution but possible under the real distribution, it immediately knows the switch has happened. The cover prevents this.</p>
+    <p class="say">The simplest choice is the uniform distribution over $Z$, which gives $\alpha = 1/(p \cdot |Z|)$.</p>
+    <p class="do">Point to the formula at the bottom.</p>
+    <p class="say">Why does $\alpha$ matter? Because the key lemma — Lemma 2 — will bound the adversary's advantage by $1/(\alpha \cdot r)$. Plugging in $\alpha = 1/(p|Z|)$ and $r = p^2|Z|$ gives exactly $1/p$. That is the origin of the security bound.</p>
+    <p class="say">With this in hand, let me describe the protocol itself.</p>
+  </div>
+  <div class="content">
+    <h2>Cover Distributions</h2>
+    <div class="def">
+      <strong>Definition:</strong> Distribution $D_1$ over $Z$ <em>covers</em> $D_2$ with parameter $\alpha$ if for every $z \in Z$:
+      $$\Pr_{a \leftarrow D_1}[a = z] \geq \alpha \cdot \Pr_{a \leftarrow D_2}[a = z]$$
+    </div>
+    <p>Intuitively: every value possible under $D_2$ (real output) must be reasonably likely under $D_1$ (fake output). Otherwise the adversary could detect the switch by seeing an "impossible" value.</p>
+    <div class="grid" style="margin-top:8px">
+      <div class="col">
+        <h3>Choice 1: Uniform distribution</h3>
+        <ul>
+          <li>$D_1 = \mathrm{Uniform}(Z)$</li>
+          <li>$D_1(z) = 1/|Z|$, and $D_2(z) \leq 1$</li>
+          <li>So $\alpha = 1/(p \cdot |Z|)$ works</li>
+          <li>Used in Theorem 3 (poly-size range)</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Choice 2: Mixed distribution</h3>
+        <ul>
+          <li>With prob $1/p$: sample $\mathrm{Uniform}(Z)$</li>
+          <li>With prob $1 - 1/p$: sample from $D_2$ itself</li>
+          <li>Same $\alpha$, but $D_1$ is much closer to $D_2$</li>
+          <li>Used in Theorem 6 (poly-size domain)</li>
+        </ul>
+      </div>
+    </div>
+    <h3 style="margin-top:10px">Why $\alpha$ matters</h3>
+    <p>Lemma 2 will show that the adversary's probability of detecting the switch point is $\leq 1/(\alpha \cdot r)$. With $\alpha = 1/(p \cdot |Z|)$ and $r = p^2 \cdot |Z|$:</p>
+    <div class="math-box">
+      $$\frac{1}{\alpha \cdot r} = \frac{p \cdot |Z|}{p^2 \cdot |Z|} = \frac{1}{p}$$
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 7: PROTOCOL ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>THE PROTOCOL — ~2 min</h4>
+    <p class="say">The protocol has two phases. Phase 1 is setup. The parties run a standard secure-with-abort protocol to jointly compute a helper functionality called ShareGen-prime.</p>
+    <p class="say">ShareGen picks a secret switch point $i^*$ uniformly from 1 to $r$. For each round before $i^*$, it generates fake values sampled from the cover distribution. From round $i^*$ onward, it uses the real output $f(x,y)$. Every value is XOR-split into two halves and authenticated with information-theoretic MACs.</p>
+    <p class="say">Phase 2 is gradual release. In each round, parties exchange their half-shares with MAC tags. The receiver verifies the MAC, XORs both halves to reconstruct the value, and stores it. At the end, each party outputs the last successfully verified value.</p>
+    <p class="say">There is an important asymmetry here: $P_2$ sends first in every round, which means $P_1$ always has a one-round information lead. This is why the security proof handles malicious $P_1$ and malicious $P_2$ as separate cases — Claim 5 and Claim 8 in the paper.</p>
+    <p class="say">The security of this entire construction rests on one key lemma.</p>
+  </div>
+  <div class="content">
+    <h2>The Protocol (Section 3)</h2>
+    <div class="grid">
+      <div class="col">
+        <h3>Phase 1: Setup via $\mathsf{ShareGen}'_{p,r}$</h3>
+        <p style="font-size:.88em">Run any <em>secure-with-abort</em> protocol for $\mathsf{ShareGen}'_{p,r}(x,y)$.</p>
+        <ol style="font-size:.88em">
+          <li>Pick switch point $i^* \leftarrow \{1,\ldots,r\}$ uniformly</li>
+          <li>For $i < i^*$: sample $a_i \leftarrow D_1$, $b_i \leftarrow D'_1$ (cover distribution)</li>
+          <li>For $i \geq i^*$: set $a_i = f^1(x,y)$, $b_i = f^2(x,y)$ (real output)</li>
+          <li>XOR-split each value: $a_i = a_i^{(1)} \oplus a_i^{(2)}$</li>
+          <li>Generate MAC keys $k_i$ and tags $t_i = \mathrm{Mac}_{k_i}(a_i^{(j)})$</li>
+          <li>Give $P_1$ its halves $\{a_i^{(1)}, b_i^{(1)}\}$ + MAC tags/keys</li>
+          <li>Give $P_2$ its halves $\{a_i^{(2)}, b_i^{(2)}\}$ + MAC tags/keys</li>
+        </ol>
+      </div>
+      <div class="col">
+        <h3>Phase 2: Gradual release</h3>
+        <p style="font-size:.88em">For each round $i = 1, \ldots, r$:</p>
+        <ol style="font-size:.88em">
+          <li>$P_2$ sends $(a_i^{(2)},\;\mathrm{tag})$ to $P_1$</li>
+          <li>$P_1$ verifies MAC. If valid: $a_i = a_i^{(1)} \oplus a_i^{(2)}$</li>
+          <li>$P_1$ sends $(b_i^{(1)},\;\mathrm{tag})$ to $P_2$</li>
+          <li>$P_2$ verifies MAC. If valid: $b_i = b_i^{(1)} \oplus b_i^{(2)}$</li>
+        </ol>
+        <p style="font-size:.85em;color:#555;margin-top:8px">Each party outputs the <strong>last successfully verified value</strong>.</p>
+        <h3 style="margin-top:10px">Asymmetry</h3>
+        <p style="font-size:.88em">$P_2$ sends first each round, so $P_1$ has a <strong>one-round information lead</strong>. The proof handles malicious $P_1$ (Claim 5) and malicious $P_2$ (Claim 8) separately.</p>
+        <h3 style="margin-top:8px">Why MACs?</h3>
+        <p style="font-size:.85em">Prevent the adversary from sending modified share halves. If a MAC check fails, the received message is simply ignored.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 8: LEMMA 2 ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>LEMMA 2 — ~2 min</h4>
+    <p class="do">This is the most technical slide. Take your time.</p>
+    <p class="say">This is the heart of the paper. The adversary observes a sequence of values $v_1$ through $v_r$. Before the switch point $i^*$, each value comes from the cover distribution $D_1$. From $i^*$ onward, each value comes from the real distribution $D_2$. The adversary adaptively decides when to abort.</p>
+    <p class="say">Lemma 2 says: no matter what strategy the adversary uses, the probability that it aborts at exactly $i^*$ is at most $1/(\alpha \cdot r)$.</p>
+    <p class="say">The proof is by induction on $r$. The base case $r = 1$ is trivial. For the inductive step: after observing $v_1$, the adversary's strategy is a function $\sigma$ from $Z$ to the interval $[0,1]$, representing the probability of aborting.</p>
+    <p class="do">Point to the left column.</p>
+    <p class="say">If $i^* = 1$, the adversary sees a value from $D_2$ and aborts with probability $\sigma(v_1)$. The hit probability is $(1/r) \sum_z D_2(z) \sigma(z)$. But the cover property constrains this — $D_1(z) \geq \alpha \cdot D_2(z)$ — so the adversary cannot concentrate its aborting too heavily on values that distinguish the distributions.</p>
+    <p class="do">Point to the right column.</p>
+    <p class="say">If $i^*$ is greater than 1, $v_1$ comes from $D_1$, and the remaining rounds form a subgame handled by the inductive hypothesis.</p>
+    <p class="say">Now I will show how the simulator uses this lemma.</p>
+  </div>
+  <div class="content">
+    <h2>Lemma 2: Bounding the Abort Probability</h2>
+    <div class="def">
+      <strong>Lemma 2:</strong> Let $D_1$ cover $D_2$ with parameter $\alpha$, and let $i^*$ be uniform in $\{1,\ldots,r\}$. The adversary observes $v_i \sim D_1$ for $i < i^*$ and $v_i \sim D_2$ for $i \geq i^*$. For <em>any</em> adaptive abort strategy:
+    </div>
+    <div class="math-box">
+      $$\Pr[\text{adversary aborts at exactly } i^*] \leq \frac{1}{\alpha \cdot r}$$
+    </div>
+    <h3>Proof (induction on $r$)</h3>
+    <ul>
+      <li><strong>Base case ($r=1$):</strong> $i^* = 1$ always. $\Pr[\text{abort at } i^*] \leq 1 \leq 1/\alpha = 1/(\alpha \cdot 1)$ since $\alpha \leq 1$.</li>
+      <li><strong>Inductive step:</strong> After observing $v_1$, the adversary's strategy is $\sigma: Z \to [0,1]$ (probability of aborting).</li>
+    </ul>
+    <div class="grid" style="margin-top:4px">
+      <div class="col">
+        <h3>Case: $i^* = 1$ (prob $1/r$)</h3>
+        <p style="font-size:.88em">$v_1 \sim D_2$. Adversary aborts with prob $\sigma(v_1)$.</p>
+        <p style="font-size:.88em">$\Pr[\text{hit}] = \frac{1}{r}\sum_z D_2(z) \cdot \sigma(z)$</p>
+        <p style="font-size:.85em;color:#555">Cover property constrains this: $D_1(z) \geq \alpha \cdot D_2(z)$, so $\sigma$ cannot concentrate on values more likely under $D_2$.</p>
+      </div>
+      <div class="col">
+        <h3>Case: $i^* > 1$ (prob $(r-1)/r$)</h3>
+        <p style="font-size:.88em">$v_1 \sim D_1$. Adversary continues with prob $1 - \sigma(v_1)$.</p>
+        <p style="font-size:.88em">Remaining $r-1$ rounds form a subgame. By inductive hypothesis, $\Pr[\text{hit in subgame}] \leq 1/(\alpha \cdot (r-1))$.</p>
+        <p style="font-size:.85em;color:#555">After combining both cases and simplifying, the total is $\leq 1/(\alpha \cdot r)$.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 9: SIMULATOR ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>SIMULATOR — ~1.5 min</h4>
+    <p class="do">Point to the left column — Claim 5.</p>
+    <p class="say">For malicious $P_1$: the simulator $\mathcal{S}_1$ first extracts the adversary's input $x'$ using the Phase 1 simulator. Then it picks its own switch point $i^*$.</p>
+    <p class="say">Before $i^*$, the simulator does not know $P_2$'s real input $y$. So it picks a random $\hat{y}$ and computes shares using $f(x', \hat{y})$. These look like cover distribution samples. At round $i^*$, it sends $x'$ to the trusted party and receives the real output $z_1 = f^1(x', y)$. From that point on, all shares encode the real output.</p>
+    <p class="say">The gap analysis: if the adversary aborts before $i^*$, the honest party $P_2$ gets the wrong output based on $\hat{y}$ instead of $y$. But by Lemma 2, this happens with probability at most $1/p$. If the adversary aborts after $i^*$, both parties have the correct output and the simulation is perfect.</p>
+    <p class="say">Claim 8 for malicious $P_2$ is symmetric — same construction, same analysis.</p>
+    <p class="say">With the protocol and simulator in place, let me state the main feasibility results.</p>
+  </div>
+  <div class="content">
+    <h2>Simulator Construction</h2>
+    <div class="grid">
+      <div class="col">
+        <h3>Claim 5: Malicious $P_1$</h3>
+        <div class="def" style="font-size:.85em">
+          <strong>Goal:</strong> Construct $\mathcal{S}_1$ in fair ideal world s.t. $\{\mathsf{IDEAL}\} \stackrel{1/p}{\approx} \{\mathsf{REAL}\}$
+        </div>
+        <ol style="font-size:.86em">
+          <li><strong>Extract input:</strong> Run Phase 1 simulator, get $\mathcal{A}$'s input $x'$</li>
+          <li><strong>Pick</strong> $i^* \leftarrow \{1,\ldots,r\}$</li>
+          <li><strong>Rounds $i < i^*$:</strong> Don't know $y$. Pick $\hat{y} \leftarrow Y_n$, compute $a_i = f^1(x', \hat{y})$. XOR-split and send to $\mathcal{A}$</li>
+          <li><strong>Round $i^*$:</strong> Send $x'$ to trusted party. Receive $z_1 = f^1(x', y)$</li>
+          <li><strong>Rounds $i \geq i^*$:</strong> Set $a_i = z_1$. Simulation is perfect</li>
+        </ol>
+        <p style="font-size:.85em;margin-top:6px"><strong>Gap analysis:</strong> If $\mathcal{A}$ aborts before $i^*$, $P_2$ gets $f^2(x', \hat{y})$ (wrong). By Lemma 2: $\Pr \leq 1/p$.</p>
+      </div>
+      <div class="col">
+        <h3>Claim 8: Malicious $P_2$</h3>
+        <div class="def" style="font-size:.85em">
+          <strong>Goal:</strong> Construct $\mathcal{S}_2$ in fair ideal world s.t. $\{\mathsf{IDEAL}\} \stackrel{1/p}{\approx} \{\mathsf{REAL}\}$
+        </div>
+        <ol style="font-size:.86em">
+          <li><strong>Extract input:</strong> Get $\mathcal{A}$'s input $y'$</li>
+          <li><strong>Pick</strong> $i^* \leftarrow \{1,\ldots,r\}$</li>
+          <li><strong>Rounds $i < i^*$:</strong> Pick fresh $\hat{x} \leftarrow X$, compute $b_i = f^2(\hat{x}, y')$, XOR-split and send</li>
+          <li><strong>Round $i^*$:</strong> Send $y'$ to trusted party. Receive $z_2 = f^2(x, y')$</li>
+          <li><strong>Rounds $i \geq i^*$:</strong> Set $b_i = z_2$</li>
+        </ol>
+        <p style="font-size:.85em;margin-top:6px"><strong>Gap:</strong> If $\mathcal{A}$ aborts before $i^*$, $P_1$ gets $f^1(\hat{x}, y')$ (wrong). Same $1/p$ bound.</p>
+      </div>
+    </div>
+    <div class="def" style="font-size:.85em;margin-top:8px">
+      <strong>Privacy</strong> is immediate: $\mathcal{A}$'s view is identical in both worlds (same XOR shares, same MACs). The only difference is the <em>honest party's output</em>, bounded by $1/p + \mathrm{negl}(n)$.
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 10: THEOREM 3 ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>THEOREM 3 — ~1 min</h4>
+    <p class="say">The first feasibility result: if at least one output range has polynomial size, the protocol achieves $1/p$-security and privacy.</p>
+    <p class="say">Why it works: the protocol runs $r = p^2 \cdot |Z|$ rounds. Since $|Z|$ is poly, this is polynomial time. Cover distribution is uniform, $\alpha = 1/(p|Z|)$. Lemma 2 gives abort probability $1/(\alpha \cdot r) = 1/p$.</p>
+    <p class="do">Point to the round complexity box.</p>
+    <p class="say">Notice the gap: upper bound is $O(p^2 |Z|)$, lower bound from Proposition 7 is $\Omega(\min\{p, |X|, |Y|\})$. For binary output, that is $O(p^2)$ versus $\Omega(p)$ — a quadratic gap that remains open.</p>
+    <p class="say">The next result is strictly stronger.</p>
+  </div>
+  <div class="content">
+    <h2>Theorem 3: Polynomial-Size Output Range (Section 3.1)</h2>
+    <div class="def">
+      <strong>Theorem 3:</strong> If $|Z^1_n|$ or $|Z^2_n| = \mathrm{poly}(n)$, then for every polynomial $p$, there exists a protocol that $\frac{1}{p}$-securely computes $f$ and privately computes $f$, assuming enhanced trapdoor permutations.
+    </div>
+    <h3>Proof sketch</h3>
+    <ul>
+      <li><strong>Protocol:</strong> Use the gradual release construction with $r = p^2 \cdot |Z^1_n|$ rounds</li>
+      <li><strong>Efficiency:</strong> $|Z^1_n| = \mathrm{poly}(n)$ $\Rightarrow$ $r = p^2 \cdot |Z^1_n| = \mathrm{poly}(n)$, so the protocol is PPT</li>
+      <li><strong>Cover distribution:</strong> $D_1 = \mathrm{Uniform}(Z^1_n)$, giving $\alpha = 1/(p \cdot |Z^1_n|)$</li>
+      <li><strong>Security bound:</strong> By Lemma 2, $\Pr[\text{abort at } i^*] \leq 1/(\alpha \cdot r) = 1/p$</li>
+      <li><strong>$1/p$-security:</strong> Follows from Claims 5 (malicious $P_1$) and 8 (malicious $P_2$)</li>
+      <li><strong>Privacy:</strong> Adversary's view is simulatable (XOR shares are uniformly distributed)</li>
+    </ul>
+    <div class="grid" style="margin-top:10px">
+      <div class="col">
+        <h3>Round complexity</h3>
+        <p style="font-size:.88em"><strong>Upper bound:</strong> $O(p^2 \cdot |Z|)$ (Theorem 3)</p>
+        <p style="font-size:.88em"><strong>Lower bound:</strong> $\Omega(\min\{p, |X|, |Y|\})$ (Proposition 7)</p>
+        <p style="font-size:.85em;color:#555">For binary output: $O(p^2)$ vs. $\Omega(p)$. Quadratic gap.</p>
+      </div>
+      <div class="col">
+        <h3>Assumption</h3>
+        <p style="font-size:.88em">Enhanced trapdoor permutations (imply OT, sufficient for general 2PC via Yao/GMW). No random oracles or non-standard assumptions.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 11: THEOREM 6 ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>THEOREM 6 — ~1 min</h4>
+    <p class="say">If at least one input domain is polynomial-size, we achieve all three properties simultaneously: $1/p$-security, security-with-abort, and privacy.</p>
+    <p class="say">The key technique is input guessing. When $|X_n|$ is polynomial, the simulator can guess the adversary's input by picking $\hat{x}$ uniformly from $X_n$. The probability of a correct guess is $1/|X_n|$, which is non-negligible. When the guess is correct, the simulator can perfectly simulate the abort ideal world because it knows both inputs.</p>
+    <p class="say">Why does this fail for super-polynomial domains? If $|X_n|$ is super-polynomial, the guessing probability is negligible and the simulation breaks down. This is not just a limitation of the proof technique — the impossibility results show it is inherent.</p>
+    <p class="say">Now let me show that these polynomial-size boundaries are tight.</p>
+  </div>
+  <div class="content">
+    <h2>Theorem 6: Polynomial-Size Input Domain (Section 3.2)</h2>
+    <div class="def">
+      <strong>Theorem 6:</strong> If $|X_n|$ or $|Y_n| = \mathrm{poly}(n)$, then for every polynomial $p$, there exists a protocol that simultaneously: (1) $\frac{1}{p}$-securely computes $f$, (2) securely-with-abort computes $f$, (3) privately computes $f$.
+    </div>
+    <h3>Why this is strictly stronger than Theorem 3</h3>
+    <div class="grid">
+      <div class="col">
+        <h3>The key ingredient: input guessing</h3>
+        <ul>
+          <li>Simulator guesses $\mathcal{A}$'s input: $\hat{x} \leftarrow X_n$</li>
+          <li>$\Pr[\hat{x} = x'] = 1/|X_n|$ = non-negligible when $|X_n| = \mathrm{poly}(n)$</li>
+          <li>When guess is correct: simulator knows both inputs, can perfectly simulate the <strong>abort ideal world</strong></li>
+          <li>When wrong: abort, try again (standard amplification)</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Why it fails for super-poly domains</h3>
+        <ul>
+          <li>If $|X_n| = \omega(\mathrm{poly}(n))$: guess probability is $\mathrm{negl}(n)$</li>
+          <li>Simulation fails</li>
+          <li>This is <strong>inherent</strong>, not a proof limitation</li>
+          <li>Theorems 9 and 11 will demonstrate this</li>
+        </ul>
+      </div>
+    </div>
+    <div class="def" style="font-size:.88em;margin-top:10px">
+      <strong>Note on $\mathsf{ShareGen}'_{p,r}$:</strong> The modified ShareGen for Theorem 6 uses a different cover distribution (mixed: $1/p$ uniform + $(1-1/p) \cdot D_2$). The $\alpha$ remains $1/(p \cdot |Z^1_n|)$ and Lemma 2 still gives a $1/p$ bound.
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 12: THEOREM 9 ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>THEOREM 9 — ~2 min</h4>
+    <p class="do">Important impossibility result. Walk through methodically.</p>
+    <p class="say">The equality function on strings of super-polynomial length. Both input domains are super-polynomial. The theorem says: for $p \geq 4$, no protocol can simultaneously achieve $1/p$-security and security-with-abort for this function.</p>
+    <p class="say">The proof uses three experiments. First, the random experiment: $x$ and $y$ are chosen independently, so equality is zero with overwhelming probability. Second, the equal experiment: set $y = x$, so equality is always one. Third, the mixed experiment: flip a coin $c$. If $c = 0$, use random inputs. If $c = 1$, use equal inputs.</p>
+    <p class="say">The adversary corrupts $P_1$, runs the protocol honestly, and checks $a_i$ after each round. If $a_i = 1$, it aborts and guesses $c = 1$. If $a_i$ is never one, it guesses $c = 0$.</p>
+    <p class="do">Point to the two boxes — Equations 2 and 3.</p>
+    <p class="say">In the ideal world, the probability of the event "adversary guesses correctly AND $P_2$'s output is wrong" is at most one-half. But in the real world, it is at least three-quarters minus a negligible term. The gap is at least one-quarter, which rules out $1/p$-security for $p \geq 4$.</p>
+    <p class="say">Theorem 11 is even stronger — it does not require security-with-abort at all.</p>
+  </div>
+  <div class="content">
+    <h2>Theorem 9: Impossibility for Equality (Section 4.1)</h2>
+    <div class="def">
+      <strong>Theorem 9:</strong> Let $\mathrm{EQ}_\ell$ be equality on strings of length $\ell(n) = \omega(\log n)$. For $p \geq 4$, no protocol can simultaneously $\frac{1}{p}$-securely and securely-with-abort compute $\mathrm{EQ}_\ell$.
+    </div>
+    <h3>Proof: Three experiments</h3>
+    <ol style="font-size:.88em">
+      <li><strong>Random experiment ($\Pr_{\mathrm{rand}}$):</strong> $x, y \leftarrow \{0,1\}^{\ell(n)}$ independently. $\mathrm{EQ} = 0$ w.h.p.</li>
+      <li><strong>Equal experiment ($\Pr_{\mathrm{eq}}$):</strong> $x \leftarrow \{0,1\}^{\ell(n)}$, set $y = x$. $\mathrm{EQ} = 1$ always.</li>
+      <li><strong>Mixed experiment:</strong> Flip coin $c$. If $c=0$: random. If $c=1$: equal.</li>
+    </ol>
+    <div class="def" style="font-size:.85em">
+      <strong>Claim 10 (from security-with-abort):</strong> $\Pr_{\mathrm{rand}}[a_0 = 1 \lor \cdots \lor a_r = 1]$ is $\mathrm{negl}(n)$. Otherwise a random-round aborter would cause $P_1$ to output 1 in the real world with non-negl probability, contradicting the abort ideal where $\mathrm{EQ}=0$ w.h.p.
+    </div>
+    <h3>The adversary $\mathcal{A}$ (corrupting $P_1$)</h3>
+    <p style="font-size:.88em">Run $\Pi$ honestly, compute $a_i$ after each round. If $a_i = 1$: abort, output "guess $c=1$". If never: complete protocol, output "guess $c=0$".</p>
+    <div class="grid" style="margin-top:6px">
+      <div class="col" style="text-align:center">
+        <h3>Eq (2): Ideal world</h3>
+        <p style="font-size:1em"><strong>$\Pr^{\mathrm{ideal}}_3[\mathrm{guess} \wedge \mathrm{out}_2 \neq 1] \leq \frac{1}{2}$</strong></p>
+      </div>
+      <div class="col" style="text-align:center">
+        <h3>Eq (3): Real world</h3>
+        <p style="font-size:.9em">$\Pr^{\mathrm{real}}_3[\mathrm{guess} \wedge \mathrm{out}_2 \neq 1]$</p>
+        <p style="font-size:.88em">$\geq \frac{1}{2}(1-\mathrm{negl}) + \frac{1}{2}\Pr_{\mathrm{eq}}[i^* \leq j^*]$</p>
+        <p style="font-size:1em"><strong>$\geq \frac{3}{4} - \mathrm{negl}(n)$</strong></p>
+      </div>
+    </div>
+    <p style="font-size:.88em;margin-top:6px"><strong>Gap $\geq 1/4$.</strong> Rules out $1/p$-security for $p \geq 4$.</p>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 13: THEOREM 11 ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>THEOREM 11 — ~1.5 min</h4>
+    <p class="say">This is the strongest impossibility result. There exists a functionality that cannot be $1/p$-securely computed for any $p \geq 2$. Note: this is $1/p$-security alone, with no security-with-abort requirement.</p>
+    <p class="say">The function is Swap with embedded information-theoretic MACs. Each party's input includes its value, a MAC key, and a MAC tag on the other party's value. The functionality outputs both values if all tags verify.</p>
+    <p class="say">The adversary $P^*_1$ runs the protocol honestly until some round where the MAC verification passes on the received value $a_i$. Since the MAC is information-theoretically secure, a passing check means $a_i$ equals $x_2$ with overwhelming probability. At that point, $P_1$ aborts with the correct value.</p>
+    <p class="say">Since one party must learn the other's value first with probability at least one-half, and in the fair ideal world this one-sided outcome is impossible, the gap is at least one-half. This rules out $p \geq 2$.</p>
+    <p class="say">Let me now summarize the complete picture.</p>
+  </div>
+  <div class="content">
+    <h2>Theorem 11: Impossibility for Swap (Section 4.2)</h2>
+    <div class="def">
+      <strong>Theorem 11:</strong> There exists a functionality that cannot be $\frac{1}{p}$-securely computed for $p \geq 2$.
+    </div>
+    <h3>The Swap function with embedded MACs</h3>
+    <p style="font-size:.88em">$P_1$ input: $(x_1,\; t_1,\; k_2,\; k'_2,\; t'_2)$ &emsp; $P_2$ input: $(x_2,\; t_2,\; k_1,\; k'_1,\; t'_1)$</p>
+    <div class="math-box" style="font-size:.92em;text-align:left">
+      $$\mathrm{Swap}_n = \begin{cases} (x_1, x_2) & \text{if } \mathrm{Vrfy}_{k_1}(x_1, t_1) = \mathrm{Vrfy}_{k_2}(x_2, t_2) = 1 \\ \bot & \text{otherwise}\end{cases}$$
+    </div>
+    <p class="small">$(k'_i, t'_i)$: extra MAC key/tag on $x_i$ under key $k'_i$. Ignored by functionality, used by adversary to verify.</p>
+    <h3>Proof</h3>
+    <ul style="font-size:.88em">
+      <li><strong>Ideal world:</strong> $P_1$ cannot "win" (get $x_2$ while $P_2$ doesn't get $x_1$).</li>
+      <li><strong>Adversary $P^*_1$:</strong> Run honestly until first round $i$ where $\mathrm{Vrfy}_{k'_2}(a_i, t'_2) = 1$. Then $a_i = x_2$ (by IT-MAC security). Output $a_i$ and abort.</li>
+      <li><strong>Let $i$ = first round $P_1$ can verify $x_2$, &nbsp; $j$ = first round $P_2$ can verify $x_1$.</strong></li>
+      <li>$\Pr[i \leq j] + \Pr[j > i] = 1$ &nbsp; $\Rightarrow$ &nbsp; one of $P^*_1, P^*_2$ wins with $\Pr \geq 1/2 - \mathrm{negl}(n)$</li>
+      <li>Ideal-world win: $\mathrm{negl}(n)$. &nbsp; <strong>Gap $\geq 1/2$. Rules out $p \geq 2$.</strong></li>
+    </ul>
+    <div class="def" style="font-size:.85em;margin-top:6px">
+      <strong>Why IT-MAC?</strong> The proof is statistical. A computationally-secure MAC allows forgery by powerful adversaries.
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 14: SUMMARY TABLE ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>COMPLETE PICTURE — ~1 min</h4>
+    <p class="do">Walk through the table row by row.</p>
+    <p class="say">Theorem 3: polynomial-size output range gives $1/p$-security plus privacy. Theorem 6: polynomial-size input domain gives all three guarantees. Theorem 9: super-polynomial input domains means we cannot combine $1/p$-security with security-with-abort, for $p \geq 4$. Theorem 11: if all domains and ranges are super-polynomial, no $1/p$-security at all, for $p \geq 2$.</p>
+    <p class="say">The feasibility and impossibility results match exactly at the polynomial-size boundary. Partial fairness is possible if and only if at least one domain or range has polynomial size. This settles the open problem from Goldreich's textbook.</p>
+    <p class="say">Now let me present three pieces of work I did beyond the paper.</p>
+  </div>
+  <div class="content">
+    <h2>The Complete Picture</h2>
+    <table style="font-size:.92em">
+      <tr><th>Result</th><th>Condition on $f : X_n \times Y_n \to Z^1_n \times Z^2_n$</th><th>What is achievable</th></tr>
+      <tr><td><strong>Theorem 3</strong></td><td>$|Z^1_n|$ or $|Z^2_n| = \mathrm{poly}(n)$</td><td>$\frac{1}{p}$-security + privacy</td></tr>
+      <tr><td><strong>Theorem 6</strong></td><td>$|X_n|$ or $|Y_n| = \mathrm{poly}(n)$</td><td>$\frac{1}{p}$-security + security-with-abort + privacy</td></tr>
+      <tr><td><strong>Theorem 9</strong></td><td>Both $|X_n|, |Y_n| = \omega(\mathrm{poly}(n))$</td><td>Cannot have $\frac{1}{p}$-security + abort for $p \geq 4$</td></tr>
+      <tr><td><strong>Theorem 11</strong></td><td>All domains/ranges $= \omega(\mathrm{poly}(n))$</td><td>Cannot have $\frac{1}{p}$-security at all for $p \geq 2$</td></tr>
+    </table>
+    <div class="def" style="margin-top:12px">
+      <strong>Tight characterization:</strong> Partial fairness ($\frac{1}{p}$-security) is achievable if and only if at least one domain or range has polynomial size. The feasibility and impossibility results match exactly at the polynomial-size boundary. This settles Goldreich's open problem (Section 7.7.1.1).
+    </div>
+    <h3 style="margin-top:10px">Key dependencies</h3>
+    <ul style="font-size:.88em">
+      <li>Both feasibility results assume enhanced trapdoor permutations (imply OT)</li>
+      <li>Theorem 9 requires the protocol to be <em>both</em> $1/p$-secure and secure-with-abort</li>
+      <li>Theorem 11 requires only $1/p$-security (stronger impossibility)</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 15: MY WORK 1 ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>WORKED EXAMPLE — ~1 min</h4>
+    <p class="say">To make the protocol concrete, I worked through the Millionaires' Problem. Both parties have a wealth value in 1 through 10 and want to know who is richer. The output is a single bit, so $|Z| = 2$ and $|X| = |Y| = 10$. Both Theorems 3 and 6 apply.</p>
+    <p class="do">Point to the left column.</p>
+    <p class="say">Using Theorem 3 with $p(n) = n$: the cover distribution is uniform over $\{0, 1\}$, $\alpha = 1/(2n)$, and the protocol runs for $2n^2$ rounds. For $n = 128$, that is 32,768 rounds.</p>
+    <p class="do">Point to the right column.</p>
+    <p class="say">Using Theorem 6: the simulator can guess the adversary's input with probability $1/10$. The round count drops to roughly $O(10n)$. For $n = 128$, that is about 1,280 rounds — twenty-five times fewer.</p>
+    <p class="say">The takeaway: when both the domain and range are small, Theorem 6 is dramatically more efficient because it avoids the quadratic dependence on $p$.</p>
+  </div>
+  <div class="content">
+    <h2>Additional Work: Worked Example</h2>
+    <p>To make the protocol concrete, I worked through the <strong>Millionaires' Problem</strong>: $P_1$ has $x \in \{1,\ldots,10\}$, $P_2$ has $y \in \{1,\ldots,10\}$, output $= \mathbf{1}[x \geq y]$.</p>
+    <p class="small">$|Z| = 2$ (bit), $|X| = |Y| = 10$. Both Theorems 3 and 6 apply.</p>
+    <div class="grid" style="margin-top:8px">
+      <div class="col">
+        <h3>Via Theorem 3 ($p(n) = n$)</h3>
+        <ul>
+          <li>$D_1 = \mathrm{Uniform}(\{0,1\})$, $\;\alpha = 1/(2n)$</li>
+          <li>Rounds: $r = p^2 \cdot |Z| = 2n^2$</li>
+          <li>For $n = 128$: $r = 32{,}768$</li>
+          <li>Check: $1/(\alpha \cdot r) = 2n/(2n^2) = 1/n$</li>
+          <li>Communication: $32{,}768 \times 2 \times (\ell + \ell_{\mathrm{MAC}})$ bits</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Via Theorem 6 ($p(n) = n$)</h3>
+        <ul>
+          <li>Simulator guesses input: $\Pr = 1/10$</li>
+          <li>Rounds: $O(p \cdot |Y|) = O(10n)$</li>
+          <li>For $n = 128$: $r \approx 1{,}280$</li>
+          <li><strong>25 times fewer</strong> than Theorem 3</li>
+          <li>Also achieves security-with-abort</li>
+        </ul>
+      </div>
+    </div>
+    <div class="def" style="margin-top:10px;font-size:.9em">
+      <strong>Takeaway:</strong> When both domain and range are polynomial, Theorem 6 is far more efficient because it avoids the $O(p^2)$ round complexity. The quadratic gap matters in practice.
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 16: MY WORK 2 ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>TIGHTNESS OF LEMMA 2 — ~1 min</h4>
+    <p class="say">A natural question is whether the $1/(\alpha \cdot r)$ bound in Lemma 2 is tight or whether it is loose. I show that it is tight by constructing a matching adversary.</p>
+    <p class="say">Take $D_1$ to be uniform over $\{0, 1\}$ and $D_2$ to be the point mass on 1, so $\alpha = 1/2$. The adversary simply aborts at the first round where $v_i = 1$.</p>
+    <p class="say">The hit probability works out to $\frac{2}{r}(1 - 2^{-r})$, which is approximately $2/r$. The Lemma 2 bound is $1/(\alpha \cdot r) = 2/r$. So the bound is essentially matched.</p>
+    <p class="say">The implication is that any protocol relying on Lemma 2 for its security cannot improve the round complexity below $O(p^2 |Z|)$. To do better, one would need a fundamentally different proof technique.</p>
+  </div>
+  <div class="content">
+    <h2>Additional Work: Tightness of Lemma 2</h2>
+    <p>Is the $1/(\alpha \cdot r)$ bound achievable, or is it loose?</p>
+    <div class="def">
+      <strong>Claim:</strong> There exist distributions and an adversary strategy that achieves $\Pr[\text{hit } i^*] = \frac{2}{r}(1-2^{-r}) \approx \frac{2}{r} = \frac{1}{\alpha \cdot r}$.
+    </div>
+    <h3>Construction</h3>
+    <ul>
+      <li>$D_1 = \mathrm{Uniform}(\{0,1\})$, &nbsp; $D_2 = $ point mass on 1. &nbsp; $\alpha = 1/2$.</li>
+      <li><strong>Strategy:</strong> abort at the first round where $v_i = 1$.</li>
+      <li>Hits $i^*$ when: $v_1 = \cdots = v_{i^*-1} = 0$ (each prob $1/2$ under $D_1$) and $v_{i^*} = 1$ (certain under $D_2$).</li>
+    </ul>
+    <div class="math-box">
+      $$\Pr[\text{hit } i^*] = \sum_{j=1}^{r} \frac{1}{r}\left(\frac{1}{2}\right)^{j-1} = \frac{1}{r} \cdot \frac{1 - 2^{-r}}{1/2} = \frac{2}{r}(1-2^{-r}) \;\approx\; \frac{2}{r} = \frac{1}{\alpha \cdot r}$$
+    </div>
+    <div class="def" style="font-size:.88em;margin-top:8px">
+      <strong>Implication:</strong> The bound is essentially tight. Any protocol that relies on Lemma 2 for its security needs at least $r = 1/(\alpha \cdot p)$ rounds. Improving the round count below $O(p^2 \cdot |Z|)$ would require a fundamentally different security argument.
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 17: MY WORK 3 ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>MULTI-PARTY EXTENSION — ~1 min</h4>
+    <p class="say">The paper leaves multi-party partial fairness with dishonest majority as an open problem. I analyzed how far their two-party approach extends.</p>
+    <p class="say">The good news: the $1/p$-security definition extends without changes. The gradual release idea also extends in principle — all parties broadcast share halves each round.</p>
+    <p class="say">The problem is in Lemma 2. In the two-party case, the adversary's strategy is a function of a single value per round. With $t$ corrupt parties, the strategy depends on all values seen by all corrupt parties. They can correlate their abort decisions — for example, $P_1$ can abort based on what $P_3$ observed.</p>
+    <p class="say">The inductive argument breaks because conditioning on one party's decision makes the other parties' views dependent. A completely new technical idea is needed. As far as I can tell, this remains open.</p>
+    <p class="say">Let me highlight the remaining open questions from the paper.</p>
+  </div>
+  <div class="content">
+    <h2>Additional Work: Multi-Party Extension</h2>
+    <p>The paper leaves multi-party partial fairness with dishonest majority as an <strong>open problem</strong> (Section 5). I analyzed how far the two-party approach extends.</p>
+    <div class="grid" style="margin-top:10px">
+      <div class="col">
+        <h3>What extends</h3>
+        <ul>
+          <li>$\frac{1}{p}$-security definition: compare to fair ideal with $1/p$ gap. No changes needed.</li>
+          <li>Gradual release protocol idea: all parties broadcast share halves each round.</li>
+          <li>Switch point trick: real values from $i^*$ onward.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Where it breaks</h3>
+        <ul>
+          <li>Lemma 2 assumes adversary's strategy is a function of a <strong>single</strong> value per round</li>
+          <li>With $t$ corrupt parties: strategy depends on <strong>all</strong> values seen by <strong>all</strong> corrupt parties</li>
+          <li>Corrupt parties can <strong>correlate</strong> abort decisions ($P_1$ aborts based on $P_3$'s view)</li>
+          <li>Inductive argument fails: conditioning on one party's decision breaks independence</li>
+        </ul>
+      </div>
+    </div>
+    <div class="def" style="margin-top:10px;font-size:.9em">
+      <strong>Conclusion:</strong> A new technical idea is needed for multi-party partial fairness with dishonest majority. The Lemma 2 approach is fundamentally two-party. The only known result is for coin tossing [Moran-Naor-Segev 2009].
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 18: OPEN QUESTIONS ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>OPEN QUESTIONS — ~1 min</h4>
+    <p class="say">The paper identifies three open problems. First, fair exchange of digital signatures — Theorem 11 rules this out since exchanging signatures is essentially a Swap.</p>
+    <p class="say">Second, the round complexity gap: the upper bound is $O(p^2)$ and the lower bound is $\Omega(p)$ for binary output. My tightness result shows that Lemma 2 itself cannot close this gap, but perhaps a different proof technique could.</p>
+    <p class="say">Third, multi-party partial fairness with dishonest majority — almost entirely open beyond coin tossing.</p>
+    <p class="say">I would also add a fourth question that I identified: composition. The $1/p$ gap is non-negligible, so composing $k$ protocols gives a total gap of $k/p$. No composition theorem for $1/p$-security exists in the literature.</p>
+    <p class="say">Let me wrap up.</p>
+  </div>
+  <div class="content">
+    <h2>Open Questions (Section 5)</h2>
+    <div class="def" style="font-size:.9em">
+      <strong>1. Fair exchange of signatures:</strong> Theorem 11 rules out $\frac{1}{p}$-security for Swap. Exchanging digital signatures is a form of Swap. What is the right notion of partial fairness for this setting?
+    </div>
+    <div class="def" style="font-size:.9em">
+      <strong>2. Round complexity gap:</strong> Upper bound $O(p^2 \cdot |Z|)$ vs. lower bound $\Omega(\min\{p, |X|, |Y|\})$. For binary output: $O(p^2)$ vs. $\Omega(p)$. Can the lower bound be improved to $\Omega(p^2)$, or can a protocol achieve $O(p)$ rounds? My tightness result shows Lemma 2 itself cannot improve the upper bound.
+    </div>
+    <div class="def" style="font-size:.9em">
+      <strong>3. Multi-party with dishonest majority:</strong> Almost entirely open beyond coin tossing. General partial fairness with $t \geq n/2$ corruptions is unknown.
+    </div>
+    <div class="def" style="font-size:.9em">
+      <strong>4. Composition (my observation):</strong> $1/p$ is non-negligible. Running $k$ protocols gives total gap $k/p$. No composition theorem exists for $\frac{1}{p}$-security. The paper's internal composition (Phase 1 + Phase 2) works because Phase 1 has negligible gap. But composing two $1/p$-fair protocols is unresolved.
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SLIDE 19: THANK YOU ==================== -->
+<div class="slide">
+  <div class="slide-notes">
+    <h4>CLOSING — ~30 sec</h4>
+    <p class="say">To summarize: Gordon and Katz gave a clean, simulation-based definition of partial fairness and showed it is achievable exactly when at least one domain or range has polynomial size. Their feasibility and impossibility results are tight.</p>
+    <p class="say">Beyond the paper, I worked through a concrete example highlighting the efficiency gap between the two constructions, proved that Lemma 2 is tight which limits future round-complexity improvements, and analyzed why the multi-party extension requires fundamentally new ideas.</p>
+    <p class="say">Thank you. I am happy to take any questions.</p>
+    <p class="do">If running over 20 min, compress slides 15-17 to quick one-sentence summaries.</p>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center">
+    <h1>Thank You</h1>
+    <p class="subtitle" style="margin-top:16px;font-size:1.1em">Questions?</p>
+    <div style="margin-top:40px;text-align:center;color:#888;font-size:.88em;line-height:1.8">
+      <p>Shubham Kumar (CS25M046)</p>
+      <p>CS6190: Recent Developments in Theoretical Computer Science</p>
+      <p>IIT Madras</p>
+    </div>
+    <div style="margin-top:30px;text-align:left;max-width:700px">
+      <p style="font-size:.8em;color:#aaa;line-height:1.6"><strong>References:</strong> [1] Gordon, Katz. Partial Fairness in Secure 2PC. Eurocrypt 2010. [2] Cleve. Limits on the Security of Coin Flips. STOC 1986. [3] Goldreich. Foundations of Cryptography, Vol 2. 2004. [4] Katz. Best of Both Worlds. STOC 2007. [5] Moran, Naor, Segev. Optimally Fair Coin Toss. TCC 2009. [6] Yao. How to Generate and Exchange Secrets. FOCS 1986.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== SCRIPT ==================== -->
+<script>
+const slides = document.querySelectorAll('.slide');
+let cur = 0;
+let presenterWin = null;
+
+function updatePresenterWin() {
+  if (!presenterWin || presenterWin.closed) return;
+  const tEl = presenterWin.document.getElementById('p-title');
+  const nEl = presenterWin.document.getElementById('p-notes');
+  if (tEl) tEl.innerHTML = `Slide ${cur+1} / ${slides.length}`;
+  if (nEl) {
+    nEl.innerHTML = document.getElementById('notesContent').innerHTML;
+    if (presenterWin.renderMathInElement) {
+      presenterWin.renderMathInElement(nEl, {
+        delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false
+      });
+    }
+  }
+}
+
+function openPresenterView() {
+  if (presenterWin && !presenterWin.closed) { presenterWin.focus(); return; }
+  presenterWin = window.open('', 'PresenterView', 'width=800,height=600,menubar=no,toolbar=no,location=no,status=no');
+  if (presenterWin) {
+    presenterWin.document.write(`
+      <html><head><title>Presenter Notes<\/title>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+      <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"><\/script>
+      <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        onload="window.renderMathInElement=renderMathInElement;"><\/script>
+      </head>
+      <body style="font-family:'Inter',system-ui,sans-serif;padding:24px 32px;max-width:900px;margin:0 auto;color:#1a1a1a;background:#fafafa">
+        <style>
+          h4{color:#000;font-size:1.1em;margin:0 0 14px;padding:8px 12px;background:#eee;border-radius:4px;letter-spacing:.02em}
+          .say{padding:8px 14px;margin:6px 0;border-left:3px solid #222;background:#f0f0f0;font-size:1em;line-height:1.65}
+          .do{padding:5px 14px;margin:6px 0;color:#999;font-style:italic;font-size:.88em;border-left:3px solid #ddd}
+          p{font-size:.95em;line-height:1.6}
+        </style>
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #222;padding-bottom:12px;margin-bottom:20px">
+          <h2 style="margin:0;font-size:1.3em;font-weight:700" id="p-title"></h2>
+          <span style="color:#999;font-size:0.75em">arrow keys to navigate</span>
+        </div>
+        <div style="font-size:1.05em;line-height:1.7" id="p-notes"></div>
+        <script>
+          document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); window.opener.nextSlide(); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); window.opener.prevSlide(); }
+          });
+        <\/script>
+      </body></html>
+    `);
+    presenterWin.document.close();
+    setTimeout(() => updatePresenterWin(), 500);
+  } else {
+    alert("Popup blocked. Please allow popups for Presenter View.");
+  }
+}
+
+function show(i) {
+  slides.forEach(s => s.classList.remove('active'));
+  slides[i].classList.add('active');
+  document.getElementById('slideNum').textContent = `${i+1} / ${slides.length}`;
+  document.getElementById('progress').style.width = `${((i+1)/slides.length)*100}%`;
+  let notesEl = slides[i].querySelector('.slide-notes');
+  let rawNotes = notesEl ? notesEl.innerHTML : '';
+  const nc = document.getElementById('notesContent');
+  nc.innerHTML = rawNotes;
+  if (window.renderMathInElement) {
+    window.renderMathInElement(nc, {
+      delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false
+    });
+  }
+  updatePresenterWin();
+}
+function nextSlide() { if (cur < slides.length-1) { cur++; show(cur); } }
+function prevSlide() { if (cur > 0) { cur--; show(cur); } }
+function toggleNotes() { document.getElementById('notesPanel').classList.toggle('visible'); }
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+  else if (e.key === 'n' || e.key === 'N') toggleNotes();
+  else if (e.key === 'p' || e.key === 'P') openPresenterView();
+  else if (e.key === 'f' || e.key === 'F') document.documentElement.requestFullscreen?.();
+});
+show(0);
+</script>
+</body>
+</html>
