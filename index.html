@@ -108,8 +108,8 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
       <li><strong>$\frac{1}{p}$-Security:</strong> The definition (Def 3) and comparison to prior notions</li>
       <li><strong>Protocol:</strong> ShareGen, cover distributions, gradual release (Phase 1 + Phase 2)</li>
       <li><strong>Lemma 2:</strong> Bounding the abort probability (proof by induction)</li>
-      <li><strong>Simulator:</strong> Construction for malicious $P_1$ (Claim 5) and malicious $P_2$ (Claim 8)</li>
-      <li><strong>Feasibility:</strong> Theorem 3 (poly-size range) and Theorem 6 (poly-size domain)</li>
+      <li><strong>Simulator:</strong> Construction for malicious $P_1$ (Claim 4) and malicious $P_2$ (Claim 5)</li>
+      <li><strong>Feasibility:</strong> Theorem 3 (poly-size domain) and Theorem 6 (poly-size range)</li>
       <li><strong>Impossibility:</strong> Theorem 9 (EQ function) and Theorem 11 (Swap function)</li>
       <li><strong>Additional work:</strong> Worked example, tightness of Lemma 2, multi-party analysis</li>
       <li><strong>Open questions and conclusion</strong></li>
@@ -323,7 +323,7 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
         </ol>
         <p style="font-size:.85em;color:#555;margin-top:8px">Each party outputs the <strong>last successfully verified value</strong>.</p>
         <h3 style="margin-top:10px">Asymmetry</h3>
-        <p style="font-size:.88em">$P_2$ sends first each round, so $P_1$ has a <strong>one-round information lead</strong>. The proof handles malicious $P_1$ (Claim 5) and malicious $P_2$ (Claim 8) separately.</p>
+        <p style="font-size:.88em">$P_2$ sends first each round, so $P_1$ has a <strong>one-round information lead</strong>. The proof handles malicious $P_1$ (Claim 4) and malicious $P_2$ (Claim 5) separately.</p>
         <h3 style="margin-top:8px">Why MACs?</h3>
         <p style="font-size:.85em">Prevent the adversary from sending modified share halves. If a MAC check fails, the received message is simply ignored.</p>
       </div>
@@ -381,20 +381,20 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
 <div class="slide">
   <div class="slide-notes">
     <h4>SIMULATOR — ~1.5 min</h4>
-    <p class="do">Point to the left column — Claim 5.</p>
+    <p class="do">Point to the left column — Claim 4.</p>
     <p class="say">For malicious $P_1$: the simulator $\mathcal{S}_1$ first extracts the adversary's input $x'$ using the Phase 1 simulator. Then it picks its own switch point $i^*$.</p>
     <p class="say">Before $i^*$, the simulator does not know $P_2$'s real input $y$. So it picks a random $\hat{y}$ and computes shares using $f(x', \hat{y})$. These look like cover distribution samples. At round $i^*$, it sends $x'$ to the trusted party and receives the real output $z_1 = f^1(x', y)$. From that point on, all shares encode the real output.</p>
     <p class="say">The gap analysis: if the adversary aborts before $i^*$, the honest party $P_2$ gets the wrong output based on $\hat{y}$ instead of $y$. But by Lemma 2, this happens with probability at most $1/p$. If the adversary aborts after $i^*$, both parties have the correct output and the simulation is perfect.</p>
-    <p class="say">Claim 8 for malicious $P_2$ is symmetric — same construction, same analysis.</p>
+    <p class="say">Claim 5 for malicious $P_2$ is symmetric — same construction, same analysis.</p>
     <p class="say">With the protocol and simulator in place, let me state the main feasibility results.</p>
   </div>
   <div class="content">
     <h2>Simulator Construction</h2>
     <div class="grid">
       <div class="col">
-        <h3>Claim 5: Malicious $P_1$</h3>
+        <h3>Claim 4: Malicious $P_1$</h3>
         <div class="def" style="font-size:.85em">
-          <strong>Goal:</strong> Construct $\mathcal{S}_1$ in fair ideal world s.t. $\{\mathsf{IDEAL}\} \stackrel{1/p}{\approx} \{\mathsf{REAL}\}$
+          <strong>Goal:</strong> Construct $\mathcal{S}_1$ in fair ideal world s.t. $\{\mathsf{IDEAL}\} \stackrel{1/p}{\approx} \{\mathsf{HYBRID}\}$
         </div>
         <ol style="font-size:.86em">
           <li><strong>Extract input:</strong> Run Phase 1 simulator, get $\mathcal{A}$'s input $x'$</li>
@@ -403,12 +403,12 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
           <li><strong>Round $i^*$:</strong> Send $x'$ to trusted party. Receive $z_1 = f^1(x', y)$</li>
           <li><strong>Rounds $i \geq i^*$:</strong> Set $a_i = z_1$. Simulation is perfect</li>
         </ol>
-        <p style="font-size:.85em;margin-top:6px"><strong>Gap analysis:</strong> If $\mathcal{A}$ aborts before $i^*$, $P_2$ gets $f^2(x', \hat{y})$ (wrong). By Lemma 2: $\Pr \leq 1/p$.</p>
+        <p style="font-size:.85em;margin-top:6px"><strong>Gap analysis:</strong> If $\mathcal{A}$ aborts at $i^*$, honest $P_2$ gets $f^2(\hat{x}, y)$ (wrong) in hybrid but $f^2(x,y)$ (correct) in ideal. By Lemma 2: $\Pr \leq 1/p$.</p>
       </div>
       <div class="col">
-        <h3>Claim 8: Malicious $P_2$</h3>
+        <h3>Claim 5: Malicious $P_2$</h3>
         <div class="def" style="font-size:.85em">
-          <strong>Goal:</strong> Construct $\mathcal{S}_2$ in fair ideal world s.t. $\{\mathsf{IDEAL}\} \stackrel{1/p}{\approx} \{\mathsf{REAL}\}$
+          <strong>Goal:</strong> Construct $\mathcal{S}_2$ in fair ideal world s.t. $\{\mathsf{IDEAL}\} \stackrel{1/p}{\approx} \{\mathsf{HYBRID}\}$
         </div>
         <ol style="font-size:.86em">
           <li><strong>Extract input:</strong> Get $\mathcal{A}$'s input $y'$</li>
@@ -431,32 +431,31 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
 <div class="slide">
   <div class="slide-notes">
     <h4>THEOREM 3 — ~1 min</h4>
-    <p class="say">The first feasibility result: if at least one output range has polynomial size, the protocol achieves $1/p$-security and privacy.</p>
-    <p class="say">Why it works: the protocol runs $r = p^2 \cdot |Z|$ rounds. Since $|Z|$ is poly, this is polynomial time. Cover distribution is uniform, $\alpha = 1/(p|Z|)$. Lemma 2 gives abort probability $1/(\alpha \cdot r) = 1/p$.</p>
-    <p class="do">Point to the round complexity box.</p>
-    <p class="say">Notice the gap: upper bound is $O(p^2 |Z|)$, lower bound from Proposition 7 is $\Omega(\min\{p, |X|, |Y|\})$. For binary output, that is $O(p^2)$ versus $\Omega(p)$ — a quadratic gap that remains open.</p>
-    <p class="say">The next result is strictly stronger.</p>
+    <p class="say">The first feasibility result: if at least one input domain has polynomial size, the protocol achieves $1/p$-security, privacy, and also security-with-abort simultaneously.</p>
+    <p class="say">Why it works: the protocol runs $r = p \cdot |Y_n|$ rounds. Since $|Y_n|$ is poly, this is polynomial time. The cover distribution for $a_i$ is $f(x, \hat{y})$ for uniform $\hat{y}$, giving $\alpha = 1/|Y_n|$. Lemma 2 gives abort probability $1/(\alpha \cdot r) = |Y_n|/(|Y_n| \cdot p) = 1/p$.</p>
+    <p class="say">A key bonus: this protocol also achieves security-with-abort. The trick is to choose $i^*$ from $\{2,\ldots,r+1\}$ and set $b_{i^*-1} = \bot$. This lets malicious $P_2$ detect $i^*$, but that is fine since $P_1$ already has the output by then.</p>
+    <p class="say">The next result handles the case of polynomial-size range.</p>
   </div>
   <div class="content">
-    <h2>Theorem 3: Polynomial-Size Output Range (Section 3.1)</h2>
+    <h2>Theorem 3: Polynomial-Size Domain (Section 3.2)</h2>
     <div class="def">
-      <strong>Theorem 3:</strong> If $|Z^1_n|$ or $|Z^2_n| = \mathrm{poly}(n)$, then for every polynomial $p$, there exists a protocol that $\frac{1}{p}$-securely computes $f$ and privately computes $f$, assuming enhanced trapdoor permutations.
+      <strong>Theorem 3:</strong> If $|Y_n| = \mathrm{poly}(n)$ (or symmetrically $|X_n|$), then for every polynomial $p$, there exists an $O(p \cdot |Y_n|)$-round protocol that $\frac{1}{p}$-securely computes $f$, privately computes $f$, and (with a small modification) securely-with-abort computes $f$, assuming enhanced trapdoor permutations.
     </div>
     <h3>Proof sketch</h3>
     <ul>
-      <li><strong>Protocol:</strong> Use the gradual release construction with $r = p^2 \cdot |Z^1_n|$ rounds</li>
-      <li><strong>Efficiency:</strong> $|Z^1_n| = \mathrm{poly}(n)$ $\Rightarrow$ $r = p^2 \cdot |Z^1_n| = \mathrm{poly}(n)$, so the protocol is PPT</li>
-      <li><strong>Cover distribution:</strong> $D_1 = \mathrm{Uniform}(Z^1_n)$, giving $\alpha = 1/(p \cdot |Z^1_n|)$</li>
-      <li><strong>Security bound:</strong> By Lemma 2, $\Pr[\text{abort at } i^*] \leq 1/(\alpha \cdot r) = 1/p$</li>
-      <li><strong>$1/p$-security:</strong> Follows from Claims 5 (malicious $P_1$) and 8 (malicious $P_2$)</li>
+      <li><strong>Protocol:</strong> Use the gradual release construction with $r = p \cdot |Y_n|$ rounds and $\mathsf{ShareGen}_r$</li>
+      <li><strong>Cover distribution:</strong> $a_i = f(x, \hat{y})$ for $\hat{y} \leftarrow Y_n$. Then $\alpha = 1/|Y_n|$</li>
+      <li><strong>Security bound:</strong> By Lemma 2, $\Pr[\text{abort at } i^*] \leq 1/(\alpha \cdot r) = |Y_n|/(p \cdot |Y_n|) = 1/p$</li>
+      <li><strong>$1/p$-security:</strong> Follows from Claims 4 (malicious $P_1$) and 5 (malicious $P_2$)</li>
       <li><strong>Privacy:</strong> Adversary's view is simulatable (XOR shares are uniformly distributed)</li>
+      <li><strong>Security-with-abort:</strong> Modify by choosing $i^* \leftarrow \{2,\ldots,r+1\}$, set $b_{i^*-1} = \bot$</li>
     </ul>
     <div class="grid" style="margin-top:10px">
       <div class="col">
         <h3>Round complexity</h3>
-        <p style="font-size:.88em"><strong>Upper bound:</strong> $O(p^2 \cdot |Z|)$ (Theorem 3)</p>
-        <p style="font-size:.88em"><strong>Lower bound:</strong> $\Omega(\min\{p, |X|, |Y|\})$ (Proposition 7)</p>
-        <p style="font-size:.85em;color:#555">For binary output: $O(p^2)$ vs. $\Omega(p)$. Quadratic gap.</p>
+        <p style="font-size:.88em"><strong>Upper bound:</strong> $O(p \cdot |Y_n|)$ (Theorem 3)</p>
+        <p style="font-size:.88em"><strong>Lower bound:</strong> $\Omega(\min\{p, |X_n|, |Y_n|\})$ (Section 5)</p>
+        <p style="font-size:.85em;color:#555">For binary output: $O(p)$ rounds. Gap remains for general case.</p>
       </div>
       <div class="col">
         <h3>Assumption</h3>
@@ -471,39 +470,47 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
 <div class="slide">
   <div class="slide-notes">
     <h4>THEOREM 6 — ~1 min</h4>
-    <p class="say">If at least one input domain is polynomial-size, we achieve all three properties simultaneously: $1/p$-security, security-with-abort, and privacy.</p>
-    <p class="say">The key technique is input guessing. When $|X_n|$ is polynomial, the simulator can guess the adversary's input by picking $\hat{x}$ uniformly from $X_n$. The probability of a correct guess is $1/|X_n|$, which is non-negligible. When the guess is correct, the simulator can perfectly simulate the abort ideal world because it knows both inputs.</p>
-    <p class="say">Why does this fail for super-polynomial domains? If $|X_n|$ is super-polynomial, the guessing probability is negligible and the simulation breaks down. This is not just a limitation of the proof technique — the impossibility results show it is inherent.</p>
+    <p class="say">Now the harder case: when the domains are super-polynomial but at least one output range is polynomial-size. Here we cannot use the simple cover distribution from Theorem 3 because sampling $f(x, \hat{y})$ may not cover all possible outputs well enough.</p>
+    <p class="say">The fix: use a mixed cover distribution. With probability $1/p$, sample $a_i$ uniformly from $Z^1_n$. With the remaining probability, sample $a_i = f^1(x, \hat{y})$ as before. This ensures every output value has probability at least $1/(p \cdot |Z^1_n|)$, giving $\alpha = 1/(p \cdot |Z^1_n|)$.</p>
+    <p class="say">The cost: the round complexity grows to $O(p^2 \cdot |Z^1_n|)$ — quadratic in $p$ instead of linear. Also, this protocol does NOT automatically achieve security-with-abort. The mixed distribution introduces a statistical gap of $O(1/p)$ in the simulation for malicious $P_2$.</p>
     <p class="say">Now let me show that these polynomial-size boundaries are tight.</p>
   </div>
   <div class="content">
-    <h2>Theorem 6: Polynomial-Size Input Domain (Section 3.2)</h2>
+    <h2>Theorem 6: Polynomial-Size Range (Section 3.3)</h2>
     <div class="def">
-      <strong>Theorem 6:</strong> If $|X_n|$ or $|Y_n| = \mathrm{poly}(n)$, then for every polynomial $p$, there exists a protocol that simultaneously: (1) $\frac{1}{p}$-securely computes $f$, (2) securely-with-abort computes $f$, (3) privately computes $f$.
+      <strong>Theorem 6:</strong> If $|Z^1_n| = \mathrm{poly}(n)$ (or symmetrically $|Z^2_n|$), then for every polynomial $p$, there exists an $O(p^2 \cdot |Z^1_n|)$-round protocol that $\frac{1}{p}$-securely computes $f$ and privately computes $f$, assuming enhanced trapdoor permutations.
     </div>
-    <h3>Why this is strictly stronger than Theorem 3</h3>
+    <h3>Key changes from Theorem 3</h3>
     <div class="grid">
       <div class="col">
-        <h3>The key ingredient: input guessing</h3>
+        <h3>Modified cover distribution ($\mathsf{ShareGen}'_{p,r}$)</h3>
         <ul>
-          <li>Simulator guesses $\mathcal{A}$'s input: $\hat{x} \leftarrow X_n$</li>
-          <li>$\Pr[\hat{x} = x'] = 1/|X_n|$ = non-negligible when $|X_n| = \mathrm{poly}(n)$</li>
-          <li>When guess is correct: simulator knows both inputs, can perfectly simulate the <strong>abort ideal world</strong></li>
-          <li>When wrong: abort, try again (standard amplification)</li>
+          <li>With prob $1/p$: $a_i \leftarrow \mathrm{Uniform}(Z^1_n)$</li>
+          <li>With prob $1 - 1/p$: $a_i = f^1(x, \hat{y})$ for $\hat{y} \leftarrow Y_n$</li>
+          <li>Guarantees $\Pr[a_i = z] \geq \frac{1}{p \cdot |Z^1_n|}$ for all $z$</li>
+          <li>So $\alpha = 1/(p \cdot |Z^1_n|)$</li>
         </ul>
       </div>
       <div class="col">
-        <h3>Why it fails for super-poly domains</h3>
+        <h3>Why no security-with-abort?</h3>
         <ul>
-          <li>If $|X_n| = \omega(\mathrm{poly}(n))$: guess probability is $\mathrm{negl}(n)$</li>
-          <li>Simulation fails</li>
-          <li>This is <strong>inherent</strong>, not a proof limitation</li>
-          <li>Theorems 9 and 11 will demonstrate this</li>
+          <li>If malicious $P_2$ aborts before $i^*$: $P_1$ outputs $a_i$ from the mixed distribution</li>
+          <li>Real-world distribution of $a_i$ differs from ideal by $O(1/p)$</li>
+          <li>This gap is tolerable for $1/p$-security but prevents achieving the abort ideal</li>
+          <li>Theorems 9 and 11 show this is <strong>inherent</strong></li>
         </ul>
       </div>
     </div>
-    <div class="def" style="font-size:.88em;margin-top:10px">
-      <strong>Note on $\mathsf{ShareGen}'_{p,r}$:</strong> The modified ShareGen for Theorem 6 uses a different cover distribution (mixed: $1/p$ uniform + $(1-1/p) \cdot D_2$). The $\alpha$ remains $1/(p \cdot |Z^1_n|)$ and Lemma 2 still gives a $1/p$ bound.
+    <div class="grid" style="margin-top:8px">
+      <div class="col">
+        <h3>Round complexity</h3>
+        <p style="font-size:.88em"><strong>Rounds:</strong> $r = p^2 \cdot |Z^1_n|$</p>
+        <p style="font-size:.88em"><strong>Bound:</strong> $1/(\alpha \cdot r) = \frac{p \cdot |Z^1_n|}{p^2 \cdot |Z^1_n|} = 1/p$</p>
+      </div>
+      <div class="col">
+        <h3>Security</h3>
+        <p style="font-size:.88em">Claim 7 (malicious $P_1$): same as Theorem 3<br>Claim 8 (malicious $P_2$): statistical gap $\leq 1/p$</p>
+      </div>
     </div>
   </div>
 </div>
@@ -595,7 +602,7 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
   <div class="slide-notes">
     <h4>COMPLETE PICTURE — ~1 min</h4>
     <p class="do">Walk through the table row by row.</p>
-    <p class="say">Theorem 3: polynomial-size output range gives $1/p$-security plus privacy. Theorem 6: polynomial-size input domain gives all three guarantees. Theorem 9: super-polynomial input domains means we cannot combine $1/p$-security with security-with-abort, for $p \geq 4$. Theorem 11: if all domains and ranges are super-polynomial, no $1/p$-security at all, for $p \geq 2$.</p>
+    <p class="say">Theorem 3: polynomial-size input domain gives all three guarantees — $1/p$-security, security-with-abort, and privacy. Theorem 6: polynomial-size output range gives $1/p$-security plus privacy. Theorem 9: super-polynomial input domains means we cannot combine $1/p$-security with security-with-abort, for $p \geq 4$. Theorem 11: if all domains and ranges are super-polynomial, no $1/p$-security at all, for $p \geq 2$.</p>
     <p class="say">The feasibility and impossibility results match exactly at the polynomial-size boundary. Partial fairness is possible if and only if at least one domain or range has polynomial size. This settles the open problem from Goldreich's textbook.</p>
     <p class="say">Now let me present three pieces of work I did beyond the paper.</p>
   </div>
@@ -603,8 +610,8 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
     <h2>The Complete Picture</h2>
     <table style="font-size:.92em">
       <tr><th>Result</th><th>Condition on $f : X_n \times Y_n \to Z^1_n \times Z^2_n$</th><th>What is achievable</th></tr>
-      <tr><td><strong>Theorem 3</strong></td><td>$|Z^1_n|$ or $|Z^2_n| = \mathrm{poly}(n)$</td><td>$\frac{1}{p}$-security + privacy</td></tr>
-      <tr><td><strong>Theorem 6</strong></td><td>$|X_n|$ or $|Y_n| = \mathrm{poly}(n)$</td><td>$\frac{1}{p}$-security + security-with-abort + privacy</td></tr>
+      <tr><td><strong>Theorem 3</strong></td><td>$|X_n|$ or $|Y_n| = \mathrm{poly}(n)$</td><td>$\frac{1}{p}$-security + security-with-abort + privacy</td></tr>
+      <tr><td><strong>Theorem 6</strong></td><td>$|Z^1_n|$ or $|Z^2_n| = \mathrm{poly}(n)$</td><td>$\frac{1}{p}$-security + privacy</td></tr>
       <tr><td><strong>Theorem 9</strong></td><td>Both $|X_n|, |Y_n| = \omega(\mathrm{poly}(n))$</td><td>Cannot have $\frac{1}{p}$-security + abort for $p \geq 4$</td></tr>
       <tr><td><strong>Theorem 11</strong></td><td>All domains/ranges $= \omega(\mathrm{poly}(n))$</td><td>Cannot have $\frac{1}{p}$-security at all for $p \geq 2$</td></tr>
     </table>
