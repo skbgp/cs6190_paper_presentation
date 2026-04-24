@@ -12,7 +12,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Inter',system-ui,sans-serif;background:#fff;color:#111;overflow:hidden;height:100vh;width:100vw}
-.slide{display:none;flex-direction:column;justify-content:flex-start;align-items:center;height:100vh;width:100vw;padding:32px 56px 24px;position:relative;overflow-y:auto}
+.slide{display:none;flex-direction:column;justify-content:flex-start;align-items:center;min-height:100vh;width:100vw;padding:32px 56px 24px;position:relative;overflow:hidden}
 .slide.active{display:flex}
 
 .progress{position:fixed;top:0;left:0;height:3px;background:#111;z-index:100;transition:width .3s ease}
@@ -23,7 +23,7 @@ h2{font-size:1.55em;font-weight:700;color:#000;margin-bottom:12px;text-align:lef
 h3{font-size:1.05em;font-weight:600;color:#000;margin:8px 0 3px}
 p{font-size:.92em;line-height:1.65;color:#111;max-width:100%;text-align:left}
 .subtitle{font-size:1em;color:#555;text-align:center;margin-top:3px;font-weight:400}
-.content{width:100%;max-width:1500px;text-align:left}
+.content{width:100%;max-width:1500px;text-align:left;flex:1;display:flex;flex-direction:column;justify-content:flex-start}
 
 ul{list-style:disc;padding-left:20px;margin:4px 0}
 ul li{padding:2px 0;font-size:.9em;line-height:1.55}
@@ -95,23 +95,28 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
 <!-- ==================== SLIDE 2: OUTLINE ==================== -->
 <div class="slide">
   <div class="slide-notes">
-    <h4>ROADMAP — ~30 sec</h4>
-    <p class="say">Let me walk you through the structure of this talk.</p>
-    <p class="do">Quickly read through the numbered list on screen. Don't elaborate on each point.</p>
-    <p class="say">The first half covers the paper's content in detail. Toward the end, I will present three pieces of my own additional work.</p>
+    <h4>ROADMAP — ~1 min</h4>
+    <p class="say">Let me walk you through the structure of this talk. I have divided it into eight parts.</p>
+    <p class="say">First, I will set up the background — what secure two-party computation is, what fairness means, why Cleve's 1986 impossibility result tells us complete fairness is impossible in general, and how the field responded with the notion of security-with-abort.</p>
+    <p class="say">Then I will present the paper's main conceptual contribution: the definition of $1/p$-security. This is a simulation-based relaxation that compares the real protocol to a perfectly fair ideal world, but allows a small $1/p$ distinguishing gap. I will compare it to full security and security-with-abort so you can see exactly where it sits.</p>
+    <p class="say">Next, I will describe the protocol itself — the ShareGen helper functionality, the cover distributions that make the switch point undetectable, and the two-phase gradual release mechanism.</p>
+    <p class="say">I will then go through Lemma 2, which is the core technical tool. It bounds the adversary's probability of aborting at exactly the switch point, and the proof is by induction on the number of rounds.</p>
+    <p class="say">After that, I will explain the simulator construction for both malicious $P_1$ and malicious $P_2$, showing how the $1/p$ gap arises from Lemma 2.</p>
+    <p class="say">Then comes the feasibility results: Theorem 3 for polynomial-size input domains, which gives $1/p$-security plus security-with-abort plus privacy, and Theorem 6 for polynomial-size output ranges, which gives $1/p$-security plus privacy but not security-with-abort.</p>
+    <p class="say">Next, the impossibility results: Theorem 9 shows that for the equality function with super-polynomial domains, you cannot have both $1/p$-security and security-with-abort when $p$ is at least 4. Theorem 11 shows that for the Swap function, you cannot have $1/p$-security at all when $p$ is at least 2.</p>
+    <p class="say">Finally, I will discuss the open questions from Section 5 of the paper and conclude.</p>
     <p class="say">Let us begin with some background.</p>
   </div>
   <div class="content">
     <h2>Outline</h2>
     <ol style="font-size:1.05em;line-height:2.1">
       <li><strong>Background:</strong> Secure 2PC, fairness, Cleve's impossibility, security-with-abort</li>
-      <li><strong>$\frac{1}{p}$-Security:</strong> The definition (Def 3) and comparison to prior notions</li>
+      <li><strong>$\frac{1}{p}$-Security:</strong> The definition and comparison to prior notions</li>
       <li><strong>Protocol:</strong> ShareGen, cover distributions, gradual release (Phase 1 + Phase 2)</li>
       <li><strong>Lemma 2:</strong> Bounding the abort probability (proof by induction)</li>
       <li><strong>Simulator:</strong> Construction for malicious $P_1$ (Claim 4) and malicious $P_2$ (Claim 5)</li>
       <li><strong>Feasibility:</strong> Theorem 3 (poly-size domain) and Theorem 6 (poly-size range)</li>
       <li><strong>Impossibility:</strong> Theorem 9 (EQ function) and Theorem 11 (Swap function)</li>
-      <li><strong>Additional work:</strong> Worked example, tightness of Lemma 2, multi-party analysis</li>
       <li><strong>Open questions and conclusion</strong></li>
     </ol>
   </div>
@@ -209,7 +214,7 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
   <div class="slide-notes">
     <h4>THE DEFINITION — ~2 min</h4>
     <p class="do">This is the most important conceptual slide. Slow down here.</p>
-    <p class="say">The paper's main conceptual contribution is Definition 3. Let me unpack it carefully.</p>
+    <p class="say">The paper's main conceptual contribution is what they call Definition 1 in Section 2 of the paper — I refer to it as Def 3 following the numbering in my report. Let me unpack it carefully.</p>
     <p class="say">The ideal world in this definition is the same fair ideal world used for complete security — both parties always get the correct output. The only relaxation is the distinguishing gap: we allow $1/p(n)$ instead of requiring it to be negligible.</p>
     <p class="do">Point to the comparison table.</p>
     <p class="say">Look at these three notions side by side. Full security uses the fair ideal world with a negligible gap — but it is impossible by Cleve. Security-with-abort weakens the ideal world to allow blocking, with a negligible gap — achievable, but no fairness. Gordon and Katz's $1/p$-security keeps the fair ideal world but allows a $1/p$ gap. This is the sweet spot.</p>
@@ -293,7 +298,7 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
     <p class="say">The protocol has two phases. Phase 1 is setup. The parties run a standard secure-with-abort protocol to jointly compute a helper functionality called ShareGen-prime.</p>
     <p class="say">ShareGen picks a secret switch point $i^*$ uniformly from 1 to $r$. For each round before $i^*$, it generates fake values sampled from the cover distribution. From round $i^*$ onward, it uses the real output $f(x,y)$. Every value is XOR-split into two halves and authenticated with information-theoretic MACs.</p>
     <p class="say">Phase 2 is gradual release. In each round, parties exchange their half-shares with MAC tags. The receiver verifies the MAC, XORs both halves to reconstruct the value, and stores it. At the end, each party outputs the last successfully verified value.</p>
-    <p class="say">There is an important asymmetry here: $P_2$ sends first in every round, which means $P_1$ always has a one-round information lead. This is why the security proof handles malicious $P_1$ and malicious $P_2$ as separate cases — Claim 5 and Claim 8 in the paper.</p>
+    <p class="say">There is an important asymmetry here: $P_2$ sends first in every round, which means $P_1$ always has a one-round information lead. This is why the security proof handles malicious $P_1$ and malicious $P_2$ as separate cases — Claims 4 and 5 for Theorem 3, and Claims 7 and 8 for Theorem 6.</p>
     <p class="say">The security of this entire construction rests on one key lemma.</p>
   </div>
   <div class="content">
@@ -604,7 +609,7 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
     <p class="do">Walk through the table row by row.</p>
     <p class="say">Theorem 3: polynomial-size input domain gives all three guarantees — $1/p$-security, security-with-abort, and privacy. Theorem 6: polynomial-size output range gives $1/p$-security plus privacy. Theorem 9: super-polynomial input domains means we cannot combine $1/p$-security with security-with-abort, for $p \geq 4$. Theorem 11: if all domains and ranges are super-polynomial, no $1/p$-security at all, for $p \geq 2$.</p>
     <p class="say">The feasibility and impossibility results match exactly at the polynomial-size boundary. Partial fairness is possible if and only if at least one domain or range has polynomial size. This settles the open problem from Goldreich's textbook.</p>
-    <p class="say">Now let me present three pieces of work I did beyond the paper.</p>
+    <p class="say">Finally, let me discuss the open questions the paper raises.</p>
   </div>
   <div class="content">
     <h2>The Complete Picture</h2>
@@ -628,128 +633,15 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
 </div>
 
 
-<!-- ==================== SLIDE 15: MY WORK 1 ==================== -->
-<div class="slide">
-  <div class="slide-notes">
-    <h4>WORKED EXAMPLE — ~1 min</h4>
-    <p class="say">To make the protocol concrete, I worked through the Millionaires' Problem. Both parties have a wealth value in 1 through 10 and want to know who is richer. The output is a single bit, so $|Z| = 2$ and $|X| = |Y| = 10$. Both Theorems 3 and 6 apply.</p>
-    <p class="do">Point to the left column.</p>
-    <p class="say">Using Theorem 3 with $p(n) = n$: the cover distribution is uniform over $\{0, 1\}$, $\alpha = 1/(2n)$, and the protocol runs for $2n^2$ rounds. For $n = 128$, that is 32,768 rounds.</p>
-    <p class="do">Point to the right column.</p>
-    <p class="say">Using Theorem 6: the simulator can guess the adversary's input with probability $1/10$. The round count drops to roughly $O(10n)$. For $n = 128$, that is about 1,280 rounds — twenty-five times fewer.</p>
-    <p class="say">The takeaway: when both the domain and range are small, Theorem 6 is dramatically more efficient because it avoids the quadratic dependence on $p$.</p>
-  </div>
-  <div class="content">
-    <h2>Additional Work: Worked Example</h2>
-    <p>To make the protocol concrete, I worked through the <strong>Millionaires' Problem</strong>: $P_1$ has $x \in \{1,\ldots,10\}$, $P_2$ has $y \in \{1,\ldots,10\}$, output $= \mathbf{1}[x \geq y]$.</p>
-    <p class="small">$|Z| = 2$ (bit), $|X| = |Y| = 10$. Both Theorems 3 and 6 apply.</p>
-    <div class="grid" style="margin-top:8px">
-      <div class="col">
-        <h3>Via Theorem 3 ($p(n) = n$)</h3>
-        <ul>
-          <li>$D_1 = \mathrm{Uniform}(\{0,1\})$, $\;\alpha = 1/(2n)$</li>
-          <li>Rounds: $r = p^2 \cdot |Z| = 2n^2$</li>
-          <li>For $n = 128$: $r = 32{,}768$</li>
-          <li>Check: $1/(\alpha \cdot r) = 2n/(2n^2) = 1/n$</li>
-          <li>Communication: $32{,}768 \times 2 \times (\ell + \ell_{\mathrm{MAC}})$ bits</li>
-        </ul>
-      </div>
-      <div class="col">
-        <h3>Via Theorem 6 ($p(n) = n$)</h3>
-        <ul>
-          <li>Simulator guesses input: $\Pr = 1/10$</li>
-          <li>Rounds: $O(p \cdot |Y|) = O(10n)$</li>
-          <li>For $n = 128$: $r \approx 1{,}280$</li>
-          <li><strong>25 times fewer</strong> than Theorem 3</li>
-          <li>Also achieves security-with-abort</li>
-        </ul>
-      </div>
-    </div>
-    <div class="def" style="margin-top:10px;font-size:.9em">
-      <strong>Takeaway:</strong> When both domain and range are polynomial, Theorem 6 is far more efficient because it avoids the $O(p^2)$ round complexity. The quadratic gap matters in practice.
-    </div>
-  </div>
-</div>
-
-
-<!-- ==================== SLIDE 16: MY WORK 2 ==================== -->
-<div class="slide">
-  <div class="slide-notes">
-    <h4>TIGHTNESS OF LEMMA 2 — ~1 min</h4>
-    <p class="say">A natural question is whether the $1/(\alpha \cdot r)$ bound in Lemma 2 is tight or whether it is loose. I show that it is tight by constructing a matching adversary.</p>
-    <p class="say">Take $D_1$ to be uniform over $\{0, 1\}$ and $D_2$ to be the point mass on 1, so $\alpha = 1/2$. The adversary simply aborts at the first round where $v_i = 1$.</p>
-    <p class="say">The hit probability works out to $\frac{2}{r}(1 - 2^{-r})$, which is approximately $2/r$. The Lemma 2 bound is $1/(\alpha \cdot r) = 2/r$. So the bound is essentially matched.</p>
-    <p class="say">The implication is that any protocol relying on Lemma 2 for its security cannot improve the round complexity below $O(p^2 |Z|)$. To do better, one would need a fundamentally different proof technique.</p>
-  </div>
-  <div class="content">
-    <h2>Additional Work: Tightness of Lemma 2</h2>
-    <p>Is the $1/(\alpha \cdot r)$ bound achievable, or is it loose?</p>
-    <div class="def">
-      <strong>Claim:</strong> There exist distributions and an adversary strategy that achieves $\Pr[\text{hit } i^*] = \frac{2}{r}(1-2^{-r}) \approx \frac{2}{r} = \frac{1}{\alpha \cdot r}$.
-    </div>
-    <h3>Construction</h3>
-    <ul>
-      <li>$D_1 = \mathrm{Uniform}(\{0,1\})$, &nbsp; $D_2 = $ point mass on 1. &nbsp; $\alpha = 1/2$.</li>
-      <li><strong>Strategy:</strong> abort at the first round where $v_i = 1$.</li>
-      <li>Hits $i^*$ when: $v_1 = \cdots = v_{i^*-1} = 0$ (each prob $1/2$ under $D_1$) and $v_{i^*} = 1$ (certain under $D_2$).</li>
-    </ul>
-    <div class="math-box">
-      $$\Pr[\text{hit } i^*] = \sum_{j=1}^{r} \frac{1}{r}\left(\frac{1}{2}\right)^{j-1} = \frac{1}{r} \cdot \frac{1 - 2^{-r}}{1/2} = \frac{2}{r}(1-2^{-r}) \;\approx\; \frac{2}{r} = \frac{1}{\alpha \cdot r}$$
-    </div>
-    <div class="def" style="font-size:.88em;margin-top:8px">
-      <strong>Implication:</strong> The bound is essentially tight. Any protocol that relies on Lemma 2 for its security needs at least $r = 1/(\alpha \cdot p)$ rounds. Improving the round count below $O(p^2 \cdot |Z|)$ would require a fundamentally different security argument.
-    </div>
-  </div>
-</div>
-
-
-<!-- ==================== SLIDE 17: MY WORK 3 ==================== -->
-<div class="slide">
-  <div class="slide-notes">
-    <h4>MULTI-PARTY EXTENSION — ~1 min</h4>
-    <p class="say">The paper leaves multi-party partial fairness with dishonest majority as an open problem. I analyzed how far their two-party approach extends.</p>
-    <p class="say">The good news: the $1/p$-security definition extends without changes. The gradual release idea also extends in principle — all parties broadcast share halves each round.</p>
-    <p class="say">The problem is in Lemma 2. In the two-party case, the adversary's strategy is a function of a single value per round. With $t$ corrupt parties, the strategy depends on all values seen by all corrupt parties. They can correlate their abort decisions — for example, $P_1$ can abort based on what $P_3$ observed.</p>
-    <p class="say">The inductive argument breaks because conditioning on one party's decision makes the other parties' views dependent. A completely new technical idea is needed. As far as I can tell, this remains open.</p>
-    <p class="say">Let me highlight the remaining open questions from the paper.</p>
-  </div>
-  <div class="content">
-    <h2>Additional Work: Multi-Party Extension</h2>
-    <p>The paper leaves multi-party partial fairness with dishonest majority as an <strong>open problem</strong> (Section 5). I analyzed how far the two-party approach extends.</p>
-    <div class="grid" style="margin-top:10px">
-      <div class="col">
-        <h3>What extends</h3>
-        <ul>
-          <li>$\frac{1}{p}$-security definition: compare to fair ideal with $1/p$ gap. No changes needed.</li>
-          <li>Gradual release protocol idea: all parties broadcast share halves each round.</li>
-          <li>Switch point trick: real values from $i^*$ onward.</li>
-        </ul>
-      </div>
-      <div class="col">
-        <h3>Where it breaks</h3>
-        <ul>
-          <li>Lemma 2 assumes adversary's strategy is a function of a <strong>single</strong> value per round</li>
-          <li>With $t$ corrupt parties: strategy depends on <strong>all</strong> values seen by <strong>all</strong> corrupt parties</li>
-          <li>Corrupt parties can <strong>correlate</strong> abort decisions ($P_1$ aborts based on $P_3$'s view)</li>
-          <li>Inductive argument fails: conditioning on one party's decision breaks independence</li>
-        </ul>
-      </div>
-    </div>
-    <div class="def" style="margin-top:10px;font-size:.9em">
-      <strong>Conclusion:</strong> A new technical idea is needed for multi-party partial fairness with dishonest majority. The Lemma 2 approach is fundamentally two-party. The only known result is for coin tossing [Moran-Naor-Segev 2009].
-    </div>
-  </div>
-</div>
-
 
 <!-- ==================== SLIDE 18: OPEN QUESTIONS ==================== -->
 <div class="slide">
   <div class="slide-notes">
     <h4>OPEN QUESTIONS — ~1 min</h4>
-    <p class="say">The paper identifies three open problems. First, fair exchange of digital signatures — Theorem 11 rules this out since exchanging signatures is essentially a Swap.</p>
-    <p class="say">Second, the round complexity gap: the upper bound is $O(p^2)$ and the lower bound is $\Omega(p)$ for binary output. My tightness result shows that Lemma 2 itself cannot close this gap, but perhaps a different proof technique could.</p>
-    <p class="say">Third, multi-party partial fairness with dishonest majority — almost entirely open beyond coin tossing.</p>
-    <p class="say">I would also add a fourth question that I identified: composition. The $1/p$ gap is non-negligible, so composing $k$ protocols gives a total gap of $k/p$. No composition theorem for $1/p$-security exists in the literature.</p>
+    <p class="say">The paper identifies three open problems in Section 5.</p>
+    <p class="say">First, fair exchange of digital signatures — Theorem 11 rules this out since exchanging signatures is essentially a Swap. So what is the right notion of partial fairness for that setting?</p>
+    <p class="say">Second, the round complexity gap: the upper bound is $O(p^2 \cdot |Z|)$ and the lower bound is $\Omega(\min\{p, |X|, |Y|\})$. For binary output this is $O(p^2)$ versus $\Omega(p)$ — a quadratic gap. Whether the lower bound can be improved or a more efficient protocol exists remains open.</p>
+    <p class="say">Third, multi-party partial fairness with dishonest majority — almost entirely open beyond coin tossing. The Lemma 2 approach is fundamentally two-party because the adversary's strategy in the multi-party case depends on all values seen by all corrupt parties, not just one.</p>
     <p class="say">Let me wrap up.</p>
   </div>
   <div class="content">
@@ -758,13 +650,10 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
       <strong>1. Fair exchange of signatures:</strong> Theorem 11 rules out $\frac{1}{p}$-security for Swap. Exchanging digital signatures is a form of Swap. What is the right notion of partial fairness for this setting?
     </div>
     <div class="def" style="font-size:.9em">
-      <strong>2. Round complexity gap:</strong> Upper bound $O(p^2 \cdot |Z|)$ vs. lower bound $\Omega(\min\{p, |X|, |Y|\})$. For binary output: $O(p^2)$ vs. $\Omega(p)$. Can the lower bound be improved to $\Omega(p^2)$, or can a protocol achieve $O(p)$ rounds? My tightness result shows Lemma 2 itself cannot improve the upper bound.
+      <strong>2. Round complexity gap:</strong> Upper bound $O(p^2 \cdot |Z|)$ vs. lower bound $\Omega(\min\{p, |X|, |Y|\})$. For binary output: $O(p^2)$ vs. $\Omega(p)$. Can the lower bound be improved to $\Omega(p^2)$, or can a protocol achieve $O(p)$ rounds?
     </div>
     <div class="def" style="font-size:.9em">
-      <strong>3. Multi-party with dishonest majority:</strong> Almost entirely open beyond coin tossing. General partial fairness with $t \geq n/2$ corruptions is unknown.
-    </div>
-    <div class="def" style="font-size:.9em">
-      <strong>4. Composition (my observation):</strong> $1/p$ is non-negligible. Running $k$ protocols gives total gap $k/p$. No composition theorem exists for $\frac{1}{p}$-security. The paper's internal composition (Phase 1 + Phase 2) works because Phase 1 has negligible gap. But composing two $1/p$-fair protocols is unresolved.
+      <strong>3. Multi-party with dishonest majority:</strong> Almost entirely open beyond coin tossing. General partial fairness with $t \geq n/2$ corruptions is unknown. The Lemma 2 approach is fundamentally two-party.
     </div>
   </div>
 </div>
@@ -774,14 +663,11 @@ td{padding:6px 10px;border-bottom:1px solid #ddd}
 <div class="slide">
   <div class="slide-notes">
     <h4>CLOSING — ~30 sec</h4>
-    <p class="say">To summarize: Gordon and Katz gave a clean, simulation-based definition of partial fairness and showed it is achievable exactly when at least one domain or range has polynomial size. Their feasibility and impossibility results are tight.</p>
-    <p class="say">Beyond the paper, I worked through a concrete example highlighting the efficiency gap between the two constructions, proved that Lemma 2 is tight which limits future round-complexity improvements, and analyzed why the multi-party extension requires fundamentally new ideas.</p>
+    <p class="say">To summarize: Gordon and Katz gave a clean, simulation-based definition of partial fairness — $1/p$-security — and showed it is achievable exactly when at least one domain or range has polynomial size. Their gradual release protocol achieves this bound, and the impossibility results for the equality and swap functions show the polynomial-size condition is tight. This settles Goldreich's open problem on defining partial fairness within the real/ideal paradigm.</p>
     <p class="say">Thank you. I am happy to take any questions.</p>
-    <p class="do">If running over 20 min, compress slides 15-17 to quick one-sentence summaries.</p>
   </div>
   <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center">
     <h1>Thank You</h1>
-    <p class="subtitle" style="margin-top:16px;font-size:1.1em">Questions?</p>
     <div style="margin-top:40px;text-align:center;color:#888;font-size:.88em;line-height:1.8">
       <p>Shubham Kumar (CS25M046)</p>
       <p>CS6190: Recent Developments in Theoretical Computer Science</p>
